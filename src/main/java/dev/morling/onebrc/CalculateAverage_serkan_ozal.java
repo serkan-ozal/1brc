@@ -360,14 +360,11 @@ public class CalculateAverage_serkan_ozal {
             int delimiterPos1 = Long.numberOfTrailingZeros(delimiterMask1) >>> 3;
             delimiterPos += delimiterPos1;
 
-            long word2 = 0;
-            if (delimiterPos == Long.BYTES) {
-                word2 = U.getLong(keyStartPtr + Long.BYTES);
-                long match2 = word2 ^ 0x3B3B3B3B3B3B3B3BL;
-                long delimiterMask2 = (match2 - 0x0101010101010101L) & (~match2 & 0x8080808080808080L);
-                int delimiterPos2 = Long.numberOfTrailingZeros(delimiterMask2) >>> 3;
-                delimiterPos += ((delimiterPos1 / Long.BYTES) * delimiterPos2);
-            }
+            long word2 = U.getLong(keyStartPtr + Long.BYTES);
+            long match2 = word2 ^ 0x3B3B3B3B3B3B3B3BL;
+            long delimiterMask2 = (match2 - 0x0101010101010101L) & (~match2 & 0x8080808080808080L);
+            int delimiterPos2 = Long.numberOfTrailingZeros(delimiterMask2) >>> 3;
+            delimiterPos += ((delimiterPos1 / Long.BYTES) * delimiterPos2);
 
             regionPtr += delimiterPos;
 
