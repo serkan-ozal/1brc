@@ -614,30 +614,34 @@ public class CalculateAverage_serkan_ozal {
 //                keyCheckIdx = BYTE_SPECIES_SIZE;
 //            }
 
-            if (keyLength <= 16) {
-                long wordA1 = U.getLong(keyStartAddress);
-                long wordA2 = U.getLong(keyStartAddress + 8);
+            int keyCheckLength = Math.min(16, keyLength);
 
-                long wordB1 = U.getLong(data, keyStartOffset);
-                long wordB2 = U.getLong(data, keyStartOffset + 8);
+            long wordA1 = U.getLong(keyStartAddress);
+            long wordA2 = U.getLong(keyStartAddress + 8);
 
-                int byteCount1 = Math.min(8, keyLength);
-                int byteCount2 = Math.max(0, keyLength - 8);
+            long wordB1 = U.getLong(data, keyStartOffset);
+            long wordB2 = U.getLong(data, keyStartOffset + 8);
 
-                int shift1 = (8 - byteCount1) << 3;
-                long mask1 = 0xFFFFFFFFFFFFFFFFL >>> shift1;
+            int byteCount1 = Math.min(8, keyCheckLength);
+            int byteCount2 = Math.max(0, keyCheckLength - 8);
 
-                int halfShift2 = (8 - byteCount2) << 2;
-                long mask2 = (0xFFFFFFFFFFFFFFFFL >>> halfShift2) >> halfShift2;
+            int shift1 = (8 - byteCount1) << 3;
+            long mask1 = 0xFFFFFFFFFFFFFFFFL >>> shift1;
 
-                wordA1 = wordA1 & mask1;
-                wordA2 = wordA2 & mask2;
+            int halfShift2 = (8 - byteCount2) << 2;
+            long mask2 = (0xFFFFFFFFFFFFFFFFL >>> halfShift2) >> halfShift2;
 
-                //wordB1 = wordB1 & mask1;
-                //wordB2 = wordB2 & mask2;
+            wordA1 = wordA1 & mask1;
+            wordA2 = wordA2 & mask2;
 
+            //wordB1 = wordB1 & mask1;
+            //wordB2 = wordB2 & mask2;
+
+            if (keyCheckLength == keyLength) {
                 return wordA1 == wordB1 && wordA2 == wordB2;
             }
+
+            keyCheckIdx = 16;
 
             // Compare remaining parts of the keys
 
