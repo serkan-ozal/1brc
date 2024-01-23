@@ -600,8 +600,8 @@ public class CalculateAverage_serkan_ozal {
             final int maxFastKeyCheckLength = 2 * Long.BYTES;
             final int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
 
-            long wordA1 = word1; // != 0 ? word1 : U.getLong(keyStartAddress);
-            long wordA2 = word2; // != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
+            long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
+            long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
 
             long wordB1 = U.getLong(data, keyStartOffset);
             long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
@@ -620,6 +620,10 @@ public class CalculateAverage_serkan_ozal {
 
             if (keyCheckLength == keyLength) {
                 return wordA1 == wordB1 && wordA2 == wordB2;
+            }
+
+            if (wordA1 != wordB1 || wordA2 != wordB2) {
+                return false;
             }
 
             // Compare remaining parts of the keys
