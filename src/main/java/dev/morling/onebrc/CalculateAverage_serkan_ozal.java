@@ -631,7 +631,16 @@ public class CalculateAverage_serkan_ozal {
             int alignedKeyLength = keyLength & 0xFFFFFFF8;
             int i;
             for (i = 0; i < alignedKeyLength; i += Long.BYTES) {
-                if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
+                long w1 = 0L;
+                if (i == 0) {
+                    w1 = word1;
+                } else if (i == 1) {
+                    w1 = word2;
+                }
+                if (w1 == 0) {
+                    w1 = U.getLong(keyStartAddress + i);
+                }
+                if (w1 != U.getLong(data, keyStartOffset + i)) {
                     return false;
                 }
             }
