@@ -15,9 +15,9 @@
  */
 package dev.morling.onebrc;
 
-import jdk.incubator.vector.ByteVector;
-import jdk.incubator.vector.VectorOperators;
-import jdk.incubator.vector.VectorSpecies;
+//import jdk.incubator.vector.ByteVector;
+//import jdk.incubator.vector.VectorOperators;
+//import jdk.incubator.vector.VectorSpecies;
 import sun.misc.Unsafe;
 
 import java.io.IOException;
@@ -49,13 +49,13 @@ public class CalculateAverage_serkan_ozal {
 
     private static final String FILE = "./measurements.txt";
 
-    private static final VectorSpecies<Byte> BYTE_SPECIES = ByteVector.SPECIES_PREFERRED.length() >= 16
-            // Since majority (99%) of the city names <= 16 bytes, according to my experiments,
-            // 128 bit (16 byte) vectors perform better than 256 bit (32 byte) or 512 bit (64 byte) vectors
-            // even though supported by platform.
-            ? ByteVector.SPECIES_128
-            : ByteVector.SPECIES_64;
-    private static final int BYTE_SPECIES_SIZE = BYTE_SPECIES.vectorByteSize();
+//    private static final VectorSpecies<Byte> BYTE_SPECIES = ByteVector.SPECIES_PREFERRED.length() >= 16
+//            // Since majority (99%) of the city names <= 16 bytes, according to my experiments,
+//            // 128 bit (16 byte) vectors perform better than 256 bit (32 byte) or 512 bit (64 byte) vectors
+//            // even though supported by platform.
+//            ? ByteVector.SPECIES_128
+//            : ByteVector.SPECIES_64;
+//    private static final int BYTE_SPECIES_SIZE = BYTE_SPECIES.vectorByteSize();
 
     private static final ByteOrder NATIVE_BYTE_ORDER = ByteOrder.nativeOrder();
     private static final char NEW_LINE_SEPARATOR = '\n';
@@ -93,7 +93,7 @@ public class CalculateAverage_serkan_ozal {
         long start = System.currentTimeMillis();
         if (VERBOSE) {
             System.out.println("Processing started at " + start);
-            System.out.println("Vector byte size: " + BYTE_SPECIES.vectorByteSize());
+//            System.out.println("Vector byte size: " + BYTE_SPECIES.vectorByteSize());
             System.out.println("Use shared memory arena: " + USE_SHARED_ARENA);
             if (USE_VTHREADS) {
                 System.out.println("Virtual thread count: " + VTHREAD_COUNT);
@@ -324,7 +324,7 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private void doProcessRegion(MemorySegment region, long regionAddress, long regionStart, long regionEnd) {
-            final int vectorSize = BYTE_SPECIES.vectorByteSize();
+            final int vectorSize = 0; //BYTE_SPECIES.vectorByteSize();
             final long regionMainLimit = regionEnd - MAX_LINE_LENGTH;
 
             long regionPtr;
@@ -338,7 +338,7 @@ public class CalculateAverage_serkan_ozal {
             for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
                 byte b = U.getByte(i);
                 if (b == KEY_VALUE_SEPARATOR) {
-                    long baseOffset = map.putKey(null, j, (int) (i - j), 0, 0);
+                    long baseOffset = map.putKey(j, (int) (i - j), 0, 0);
                     i = extractValue(i + 1, map, baseOffset);
                     j = i;
                 }
@@ -395,7 +395,7 @@ public class CalculateAverage_serkan_ozal {
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // Put key and get map offset to put value
-            long mapOffset = map.putKey(null, keyStartPtr, keyLength, word1, word2);
+            long mapOffset = map.putKey(keyStartPtr, keyLength, word1, word2);
 
             // Extract value, put it into map and return next position in the region to continue processing from there
             return extractValue(regionPtr, map, mapOffset);
@@ -590,7 +590,7 @@ public class CalculateAverage_serkan_ozal {
             return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
         }
 
-        private long putKey(ByteVector keyVector, long keyStartAddress, int keyLength, long word1, long word2) {
+        private long putKey(long keyStartAddress, int keyLength, long word1, long word2) {
             // Calculate hash of key
             int keyHash = calculateKeyHash(keyStartAddress, keyLength);
             // and get the position of the entry in the linear map based on calculated hash
@@ -614,13 +614,13 @@ public class CalculateAverage_serkan_ozal {
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, keyStartOffset, word1, word2)) {
+                if (keySize == keyLength && keysEqual(keyStartAddress, keyLength, keyStartOffset, word1, word2)) {
                     return baseOffset;
                 }
             }
         }
 
-        private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, int keyStartOffset,
+        private boolean keysEqual(long keyStartAddress, int keyLength, int keyStartOffset,
                                   long word1, long word2) {
             int keyCheckIdx = 0;
 //            if (keyVector != null) {
