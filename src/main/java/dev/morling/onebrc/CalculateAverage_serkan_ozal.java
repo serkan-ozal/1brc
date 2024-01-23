@@ -64,15 +64,15 @@ public class CalculateAverage_serkan_ozal {
 
     // Get configurations
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    private static final boolean VERBOSE = getBooleanConfig("VERBOSE", false);
-    private static final int THREAD_COUNT = getIntegerConfig("THREAD_COUNT", Runtime.getRuntime().availableProcessors());
-    private static final boolean USE_VTHREADS = getBooleanConfig("USE_VTHREADS", false);
-    private static final int VTHREAD_COUNT = getIntegerConfig("VTHREAD_COUNT", 1024);
-    private static final int REGION_COUNT = getIntegerConfig("REGION_COUNT", -1);
-    private static final boolean USE_SHARED_ARENA = getBooleanConfig("USE_SHARED_ARENA", false);
-    private static final boolean USE_SHARED_REGION = getBooleanConfig("USE_SHARED_REGION", false);
-    private static final int MAP_CAPACITY = getIntegerConfig("MAP_CAPACITY", 1 << 17);
-    private static final boolean CLOSE_STDOUT_ON_RESULT = getBooleanConfig("CLOSE_STDOUT_ON_RESULT", false);
+    private static final boolean VERBOSE = false; //getBooleanConfig("VERBOSE", false);
+    private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors(); //getIntegerConfig("THREAD_COUNT", Runtime.getRuntime().availableProcessors());
+    private static final boolean USE_VTHREADS = false; //getBooleanConfig("USE_VTHREADS", false);
+    private static final int VTHREAD_COUNT = 1024; //getIntegerConfig("VTHREAD_COUNT", 1024);
+    private static final int REGION_COUNT = -1; //getIntegerConfig("REGION_COUNT", -1);
+    private static final boolean USE_SHARED_ARENA = true; //getBooleanConfig("USE_SHARED_ARENA", true);
+    private static final boolean USE_SHARED_REGION = true; //getBooleanConfig("USE_SHARED_REGION", true);
+    private static final int MAP_CAPACITY = 1 << 17; //getIntegerConfig("MAP_CAPACITY", 1 << 17);
+    private static final boolean CLOSE_STDOUT_ON_RESULT = true; //getBooleanConfig("CLOSE_STDOUT_ON_RESULT", false);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // My dear old friend Unsafe
@@ -281,7 +281,7 @@ public class CalculateAverage_serkan_ozal {
                 long regionStart = regionGiven ? (r.address() + start) : r.address();
                 long regionEnd = regionStart + size;
 
-                doProcessRegion(r, r.address(), regionStart, regionEnd);
+                doProcessRegion(regionStart, regionEnd);
                 if (VERBOSE) {
                     System.out.println("[Processor-" + Thread.currentThread().getName() + "] Region processed at " + System.currentTimeMillis());
                 }
@@ -323,15 +323,14 @@ public class CalculateAverage_serkan_ozal {
             }
         }
 
-        private void doProcessRegion(MemorySegment region, long regionAddress, long regionStart, long regionEnd) {
-            final int vectorSize = 0; //BYTE_SPECIES.vectorByteSize();
+        private void doProcessRegion(long regionStart, long regionEnd) {
             final long regionMainLimit = regionEnd - MAX_LINE_LENGTH;
 
             long regionPtr;
 
             // Read and process region - main
             for (regionPtr = regionStart; regionPtr < regionMainLimit;) {
-                regionPtr = doProcessLine(region, regionAddress, regionPtr, vectorSize);
+                regionPtr = doProcessLine(regionPtr);
             }
 
             // Read and process region - tail
@@ -348,26 +347,10 @@ public class CalculateAverage_serkan_ozal {
             }
         }
 
-        private long doProcessLine(MemorySegment region, long regionAddress, long regionPtr, int vectorSize) {
+        private long doProcessLine(long regionPtr) {
             // Find key/value separator
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
             long keyStartPtr = regionPtr;
-
-//            // Vectorized search for key/value separator
-//            ByteVector keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, region, regionPtr - regionAddress, NATIVE_BYTE_ORDER);
-//            int keyValueSepOffset = keyVector.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-//            // Check whether key/value separator is found in the first vector (city name is <= vector size)
-//            if (keyValueSepOffset == vectorSize) {
-//                regionPtr += vectorSize;
-//                keyValueSepOffset = 0;
-//                for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
-//                    ;
-//                // I have tried vectorized search for key/value separator in the remaining part,
-//                // but since majority (99%) of the city names <= 16 bytes
-//                // and other a few longer city names (have length < 16 and <= 32) not close to 32 bytes,
-//                // byte by byte search is better in terms of performance (according to my experiments) and simplicity.
-//            }
-//            regionPtr += keyValueSepOffset;
 
             int delimiterPos = 0;
 
@@ -622,23 +605,8 @@ public class CalculateAverage_serkan_ozal {
 
         private boolean keysEqual(long keyStartAddress, int keyLength, int keyStartOffset,
                                   long word1, long word2) {
-            int keyCheckIdx = 0;
-//            if (keyVector != null) {
-//                // Use vectorized search for the comparison of keys.
-//                // Since majority of the city names >= 8 bytes and <= 16 bytes,
-//                // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
-//                int keyCheckLength = Math.min(BYTE_SPECIES_SIZE, keyLength);
-//                ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartOffset - Unsafe.ARRAY_BYTE_BASE_OFFSET);
-//                long eqMask = keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
-//                int eqCount = Long.numberOfTrailingZeros(~eqMask);
-//                if (eqCount >= keyCheckLength) {
-//                    return true;
-//                }
-//                keyCheckIdx = BYTE_SPECIES_SIZE;
-//            }
-
             final int maxFastKeyCheckLength = 2 * Long.BYTES;
-            int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
+            final int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
 
             long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
             long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
@@ -658,20 +626,15 @@ public class CalculateAverage_serkan_ozal {
             wordA1 = wordA1 & mask1;
             wordA2 = wordA2 & mask2;
 
-            //wordB1 = wordB1 & mask1;
-            //wordB2 = wordB2 & mask2;
-
             if (keyCheckLength == keyLength) {
                 return wordA1 == wordB1 && wordA2 == wordB2;
             }
-
-            keyCheckIdx = maxFastKeyCheckLength;
 
             // Compare remaining parts of the keys
 
             int alignedKeyLength = keyLength & 0xFFFFFFF8;
             int i;
-            for (i = keyCheckIdx; i < alignedKeyLength; i += Long.BYTES) {
+            for (i = maxFastKeyCheckLength; i < alignedKeyLength; i += Long.BYTES) {
                 if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
                     return false;
                 }

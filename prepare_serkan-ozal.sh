@@ -20,10 +20,10 @@ sdk use java 21.0.2-graal 1>&2
 
 # ./mvnw clean verify removes target/ and will re-trigger native image creation.
 if [ ! -f target/CalculateAverage_serkan_ozal_image ]; then
-    JAVA_OPTS="--enable-preview -dsa"
     #NATIVE_IMAGE_OPTS="--gc=epsilon -O3 -march=native --enable-preview -H:InlineAllBonus=10 -H:-ParseRuntimeOptions"
-    NATIVE_IMAGE_OPTS="--initialize-at-build-time=dev.morling.onebrc.CalculateAverage_serkan_ozal --gc=epsilon -Ob -O3 -march=native --strict-image-heap $JAVA_OPTS"
-
+    NATIVE_IMAGE_OPTS="--initialize-at-build-time=dev.morling.onebrc.CalculateAverage_serkan_ozal --gc=epsilon -Ob -O3 -march=native --strict-image-heap"
+    NATIVE_IMAGE_OPTS="$NATIVE_IMAGE_OPTS -H:InlineAllBonus=10 -H:-ParseRuntimeOptions --enable-preview -dsa -R:MaxHeapSize=256m"
     # Use -H:MethodFilter=CalculateAverage_serkan_ozal.* -H:Dump=:2 -H:PrintGraph=Network for IdealGraphVisualizer graph dumping.
+
     native-image $NATIVE_IMAGE_OPTS -cp target/average-1.0.0-SNAPSHOT.jar -o target/CalculateAverage_serkan_ozal_image dev.morling.onebrc.CalculateAverage_serkan_ozal
 fi
