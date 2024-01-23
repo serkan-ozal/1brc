@@ -49,14 +49,6 @@ public class CalculateAverage_serkan_ozal {
 
     private static final String FILE = "./measurements.txt";
 
-//    private static final VectorSpecies<Byte> BYTE_SPECIES = ByteVector.SPECIES_PREFERRED.length() >= 16
-//            // Since majority (99%) of the city names <= 16 bytes, according to my experiments,
-//            // 128 bit (16 byte) vectors perform better than 256 bit (32 byte) or 512 bit (64 byte) vectors
-//            // even though supported by platform.
-//            ? ByteVector.SPECIES_128
-//            : ByteVector.SPECIES_64;
-//    private static final int BYTE_SPECIES_SIZE = BYTE_SPECIES.vectorByteSize();
-
     private static final ByteOrder NATIVE_BYTE_ORDER = ByteOrder.nativeOrder();
     private static final char NEW_LINE_SEPARATOR = '\n';
     private static final char KEY_VALUE_SEPARATOR = ';';
@@ -68,7 +60,7 @@ public class CalculateAverage_serkan_ozal {
     private static final int THREAD_COUNT = 8; //getIntegerConfig("THREAD_COUNT", Runtime.getRuntime().availableProcessors());
     private static final boolean USE_VTHREADS = false; //getBooleanConfig("USE_VTHREADS", false);
     private static final int VTHREAD_COUNT = 1024; //getIntegerConfig("VTHREAD_COUNT", 1024);
-    private static final int REGION_COUNT = -1; //getIntegerConfig("REGION_COUNT", -1);
+    private static final int REGION_COUNT = 8; //getIntegerConfig("REGION_COUNT", -1);
     private static final boolean USE_SHARED_ARENA = true; //getBooleanConfig("USE_SHARED_ARENA", true);
     private static final boolean USE_SHARED_REGION = true; //getBooleanConfig("USE_SHARED_REGION", true);
     private static final int MAP_CAPACITY = 1 << 17; //getIntegerConfig("MAP_CAPACITY", 1 << 17);
