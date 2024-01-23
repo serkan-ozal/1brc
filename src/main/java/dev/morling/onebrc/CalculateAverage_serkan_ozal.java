@@ -614,7 +614,7 @@ public class CalculateAverage_serkan_ozal {
             long wordB1 = U.getLong(data, keyStartOffset);
             long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
 
-            int byteCount1 = Math.min(8, keyCheckLength);
+            int byteCount1 = Math.min(Long.BYTES, keyCheckLength);
             int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
 
             int shift1 = (Long.BYTES - byteCount1) << 3;
@@ -656,10 +656,14 @@ public class CalculateAverage_serkan_ozal {
         private void putValue(long baseOffset, int value) {
             U.putInt(data, baseOffset + COUNT_OFFSET,
                     U.getInt(data, baseOffset + COUNT_OFFSET) + 1);
-            U.putShort(data, baseOffset + MIN_VALUE_OFFSET,
-                    (short) Math.min(value, U.getShort(data, baseOffset + MIN_VALUE_OFFSET)));
-            U.putShort(data, baseOffset + MAX_VALUE_OFFSET,
-                    (short) Math.max(value, U.getShort(data, baseOffset + MAX_VALUE_OFFSET)));
+            short minValue = U.getShort(data, baseOffset + MIN_VALUE_OFFSET);
+            if (value < minValue) {
+                U.putShort(data, baseOffset + MIN_VALUE_OFFSET, (short) value);
+            }
+            short maxValue = U.getShort(data, baseOffset + MAX_VALUE_OFFSET);
+            if (value > maxValue) {
+                U.putShort(data, baseOffset + MAX_VALUE_OFFSET, (short) value);
+            }
             U.putLong(data, baseOffset + VALUE_SUM_OFFSET,
                     value + U.getLong(data, baseOffset + VALUE_SUM_OFFSET));
         }
