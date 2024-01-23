@@ -600,19 +600,19 @@ public class CalculateAverage_serkan_ozal {
 
         private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, int keyStartOffset) {
             int keyCheckIdx = 0;
-            if (keyVector != null) {
-                // Use vectorized search for the comparison of keys.
-                // Since majority of the city names >= 8 bytes and <= 16 bytes,
-                // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
-                int keyCheckLength = Math.min(BYTE_SPECIES_SIZE, keyLength);
-                ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartOffset - Unsafe.ARRAY_BYTE_BASE_OFFSET);
-                long eqMask = keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
-                int eqCount = Long.numberOfTrailingZeros(~eqMask);
-                if (eqCount >= keyCheckLength) {
-                    return true;
-                }
-                keyCheckIdx = BYTE_SPECIES_SIZE;
-            }
+//            if (keyVector != null) {
+//                // Use vectorized search for the comparison of keys.
+//                // Since majority of the city names >= 8 bytes and <= 16 bytes,
+//                // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
+//                int keyCheckLength = Math.min(BYTE_SPECIES_SIZE, keyLength);
+//                ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartOffset - Unsafe.ARRAY_BYTE_BASE_OFFSET);
+//                long eqMask = keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
+//                int eqCount = Long.numberOfTrailingZeros(~eqMask);
+//                if (eqCount >= keyCheckLength) {
+//                    return true;
+//                }
+//                keyCheckIdx = BYTE_SPECIES_SIZE;
+//            }
 
             if (keyLength <= 16) {
                 long wordA1 = U.getLong(keyStartAddress);
