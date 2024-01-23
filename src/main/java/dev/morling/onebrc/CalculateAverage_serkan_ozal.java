@@ -261,8 +261,7 @@ public class CalculateAverage_serkan_ozal {
             try {
                 processRegion();
                 return new Response(map);
-            }
-            finally {
+            } finally {
                 if (VERBOSE) {
                     System.out.println("[Processor-" + Thread.currentThread().getName() + "] Processing finished at " + System.currentTimeMillis());
                 }
@@ -311,8 +310,7 @@ public class CalculateAverage_serkan_ozal {
                         System.out.println("[Processor-" + Thread.currentThread().getName() + "] Result merged at " + System.currentTimeMillis());
                     }
                 }
-            }
-            finally {
+            } finally {
                 // If local memory arena is managed here and not closed yet, close it here
                 if (!arenaGiven && a != null) {
                     a.close();
@@ -329,61 +327,55 @@ public class CalculateAverage_serkan_ozal {
             long regionPtr;
 
             // Read and process region - main
-            for (regionPtr = regionStart; regionPtr < regionMainLimit;) {
-                regionPtr = doProcessLine(regionPtr);
+            for (regionPtr = regionStart; regionPtr < regionMainLimit; ) {
+                // Find key/value separator
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                long keyStartPtr = regionPtr;
+
+                int delimiterPos = 0;
+
+                long word1 = U.getLong(keyStartPtr);
+                long match1 = word1 ^ 0x3B3B3B3B3B3B3B3BL;
+                long delimiterMask1 = (match1 - 0x0101010101010101L) & (~match1 & 0x8080808080808080L);
+                int delimiterPos1 = Long.numberOfTrailingZeros(delimiterMask1) >>> 3;
+                delimiterPos += delimiterPos1;
+
+                long word2 = U.getLong(keyStartPtr + Long.BYTES);
+                long match2 = word2 ^ 0x3B3B3B3B3B3B3B3BL;
+                long delimiterMask2 = (match2 - 0x0101010101010101L) & (~match2 & 0x8080808080808080L);
+                int delimiterPos2 = Long.numberOfTrailingZeros(delimiterMask2) >>> 3;
+                delimiterPos += ((delimiterPos1 / Long.BYTES) * delimiterPos2);
+
+                regionPtr += delimiterPos;
+
+                if (delimiterPos == 2 * Long.BYTES) {
+                    for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
+                        ;
+                }
+
+                int keyLength = (int) (regionPtr - keyStartPtr);
+                regionPtr++;
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                // Put key and get map offset to put value
+                long mapOffset = map.putKey(keyStartPtr, keyLength, word1, word2);
+
+                // Extract value, put it into map and return next position in the region to continue processing from there
+                regionPtr = extractValue(regionPtr, map, mapOffset);
             }
 
             // Read and process region - tail
-            for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
+            for (long i = regionPtr, j = regionPtr; i < regionEnd; ) {
                 byte b = U.getByte(i);
                 if (b == KEY_VALUE_SEPARATOR) {
                     long baseOffset = map.putKey(j, (int) (i - j), 0, 0);
                     i = extractValue(i + 1, map, baseOffset);
                     j = i;
-                }
-                else {
+                } else {
                     i++;
                 }
             }
         }
-
-        private long doProcessLine(long regionPtr) {
-            // Find key/value separator
-            ////////////////////////////////////////////////////////////////////////////////////////////////////////
-            long keyStartPtr = regionPtr;
-
-            int delimiterPos = 0;
-
-            long word1 = U.getLong(keyStartPtr);
-            long match1 = word1 ^ 0x3B3B3B3B3B3B3B3BL;
-            long delimiterMask1 = (match1 - 0x0101010101010101L) & (~match1 & 0x8080808080808080L);
-            int delimiterPos1 = Long.numberOfTrailingZeros(delimiterMask1) >>> 3;
-            delimiterPos += delimiterPos1;
-
-            long word2 = U.getLong(keyStartPtr + Long.BYTES);
-            long match2 = word2 ^ 0x3B3B3B3B3B3B3B3BL;
-            long delimiterMask2 = (match2 - 0x0101010101010101L) & (~match2 & 0x8080808080808080L);
-            int delimiterPos2 = Long.numberOfTrailingZeros(delimiterMask2) >>> 3;
-            delimiterPos += ((delimiterPos1 / Long.BYTES) * delimiterPos2);
-
-            regionPtr += delimiterPos;
-
-            if (delimiterPos == 2 * Long.BYTES) {
-                for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
-                    ;
-            }
-
-            int keyLength = (int) (regionPtr - keyStartPtr);
-            regionPtr++;
-            ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-            // Put key and get map offset to put value
-            long mapOffset = map.putKey(keyStartPtr, keyLength, word1, word2);
-
-            // Extract value, put it into map and return next position in the region to continue processing from there
-            return extractValue(regionPtr, map, mapOffset);
-        }
-
     }
 
     // Credits: merykitty
