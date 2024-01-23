@@ -26,7 +26,8 @@ fi
 # TODO Generate/Get a random and available file descriptor number?
 fd=1234
 #echo "Process started at $(date +%s%N | cut -b1-13)"
-eval "exec $fd< <({ CLOSE_STDOUT_ON_RESULT=true USE_SHARED_ARENA=true USE_SHARED_REGION=true java $JAVA_OPTS --class-path target/average-1.0.0-SNAPSHOT.jar dev.morling.onebrc.CalculateAverage_serkan_ozal; })"
+#eval "exec $fd< <({ CLOSE_STDOUT_ON_RESULT=true USE_SHARED_ARENA=true USE_SHARED_REGION=true java $JAVA_OPTS --class-path target/average-1.0.0-SNAPSHOT.jar dev.morling.onebrc.CalculateAverage_serkan_ozal; })"
+eval "exec $fd< <({ CLOSE_STDOUT_ON_RESULT=true USE_SHARED_ARENA=true USE_SHARED_REGION=true target/CalculateAverage_serkan_ozal_image; })"
 read <&$fd result
 echo -e "$result"
 #echo "Process finished at $(date +%s%N | cut -b1-13)"
