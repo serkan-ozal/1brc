@@ -338,7 +338,7 @@ public class CalculateAverage_serkan_ozal {
             for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
                 byte b = U.getByte(i);
                 if (b == KEY_VALUE_SEPARATOR) {
-                    long baseOffset = map.putKey(null, j, (int) (i - j));
+                    long baseOffset = map.putKey(null, j, (int) (i - j), 0, 0);
                     i = extractValue(i + 1, map, baseOffset);
                     j = i;
                 }
@@ -395,7 +395,7 @@ public class CalculateAverage_serkan_ozal {
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // Put key and get map offset to put value
-            long mapOffset = map.putKey(null, keyStartPtr, keyLength);
+            long mapOffset = map.putKey(null, keyStartPtr, keyLength, word1, word2);
 
             // Extract value, put it into map and return next position in the region to continue processing from there
             return extractValue(regionPtr, map, mapOffset);
@@ -590,7 +590,7 @@ public class CalculateAverage_serkan_ozal {
             return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
         }
 
-        private long putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
+        private long putKey(ByteVector keyVector, long keyStartAddress, int keyLength, long word1, long word2) {
             // Calculate hash of key
             int keyHash = calculateKeyHash(keyStartAddress, keyLength);
             // and get the position of the entry in the linear map based on calculated hash
@@ -614,13 +614,14 @@ public class CalculateAverage_serkan_ozal {
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, keyStartOffset)) {
+                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, keyStartOffset, word1, word2)) {
                     return baseOffset;
                 }
             }
         }
 
-        private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, int keyStartOffset) {
+        private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, int keyStartOffset,
+                                  long word1, long word2) {
             int keyCheckIdx = 0;
 //            if (keyVector != null) {
 //                // Use vectorized search for the comparison of keys.
@@ -639,8 +640,8 @@ public class CalculateAverage_serkan_ozal {
             final int maxFastKeyCheckLength = 2 * Long.BYTES;
             int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
 
-            long wordA1 = U.getLong(keyStartAddress);
-            long wordA2 = U.getLong(keyStartAddress + Long.BYTES);
+            long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
+            long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
 
             long wordB1 = U.getLong(data, keyStartOffset);
             long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
