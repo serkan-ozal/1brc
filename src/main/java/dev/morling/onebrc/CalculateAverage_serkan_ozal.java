@@ -63,7 +63,7 @@ public class CalculateAverage_serkan_ozal {
     private static final int REGION_COUNT = -1; //getIntegerConfig("REGION_COUNT", -1);
     private static final boolean USE_SHARED_ARENA = true; //getBooleanConfig("USE_SHARED_ARENA", true);
     private static final boolean USE_SHARED_REGION = true; //getBooleanConfig("USE_SHARED_REGION", true);
-    private static final int MAP_CAPACITY = 1 << 17; //getIntegerConfig("MAP_CAPACITY", 1 << 17);
+    private static final int MAP_CAPACITY = 1 << 19; //getIntegerConfig("MAP_CAPACITY", 1 << 17);
     private static final boolean CLOSE_STDOUT_ON_RESULT = true; //getBooleanConfig("CLOSE_STDOUT_ON_RESULT", false);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -597,50 +597,41 @@ public class CalculateAverage_serkan_ozal {
 
         private boolean keysEqual(long keyStartAddress, int keyLength, int keyStartOffset,
                                   long word1, long word2) {
-//            final int maxFastKeyCheckLength = 2 * Long.BYTES;
-//            final int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
-//
-//            long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
-//            long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
-//
-//            long wordB1 = U.getLong(data, keyStartOffset);
-//            long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
-//
-//            int byteCount1 = Math.min(Long.BYTES, keyCheckLength);
-//            int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
-//
-//            int shift1 = (Long.BYTES - byteCount1) << 3;
-//            long mask1 = 0xFFFFFFFFFFFFFFFFL >>> shift1;
-//
-//            int halfShift2 = (Long.BYTES - byteCount2) << 2;
-//            long mask2 = (0xFFFFFFFFFFFFFFFFL >>> halfShift2) >> halfShift2;
-//
-//            wordA1 = wordA1 & mask1;
-//            wordA2 = wordA2 & mask2;
-//
-//            if (keyCheckLength == keyLength) {
-//                return wordA1 == wordB1 && wordA2 == wordB2;
-//            }
-//
-//            if (wordA1 != wordB1 || wordA2 != wordB2) {
-//                return false;
-//            }
+            final int maxFastKeyCheckLength = 2 * Long.BYTES;
+            final int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
+
+            long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
+            long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
+
+            long wordB1 = U.getLong(data, keyStartOffset);
+            long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
+
+            int byteCount1 = Math.min(Long.BYTES, keyCheckLength);
+            int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
+
+            int shift1 = (Long.BYTES - byteCount1) << 3;
+            long mask1 = 0xFFFFFFFFFFFFFFFFL >>> shift1;
+
+            int halfShift2 = (Long.BYTES - byteCount2) << 2;
+            long mask2 = (0xFFFFFFFFFFFFFFFFL >>> halfShift2) >> halfShift2;
+
+            wordA1 = wordA1 & mask1;
+            wordA2 = wordA2 & mask2;
+
+            if (keyCheckLength == keyLength) {
+                return wordA1 == wordB1 && wordA2 == wordB2;
+            }
+
+            if (wordA1 != wordB1 || wordA2 != wordB2) {
+                return false;
+            }
 
             // Compare remaining parts of the keys
 
             int alignedKeyLength = keyLength & 0xFFFFFFF8;
             int i;
-            for (i = 0; i < alignedKeyLength; i += Long.BYTES) {
-                long w1 = 0L;
-                if (i == 0) {
-                    w1 = word1;
-                } else if (i == 1) {
-                    w1 = word2;
-                }
-                if (w1 == 0) {
-                    w1 = U.getLong(keyStartAddress + i);
-                }
-                if (w1 != U.getLong(data, keyStartOffset + i)) {
+            for (i = maxFastKeyCheckLength; i < alignedKeyLength; i += Long.BYTES) {
+                if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
                     return false;
                 }
             }
