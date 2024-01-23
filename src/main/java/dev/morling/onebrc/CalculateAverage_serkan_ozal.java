@@ -60,7 +60,7 @@ public class CalculateAverage_serkan_ozal {
     private static final int THREAD_COUNT = 8; //getIntegerConfig("THREAD_COUNT", Runtime.getRuntime().availableProcessors());
     private static final boolean USE_VTHREADS = false; //getBooleanConfig("USE_VTHREADS", false);
     private static final int VTHREAD_COUNT = 1024; //getIntegerConfig("VTHREAD_COUNT", 1024);
-    private static final int REGION_COUNT = 64; //getIntegerConfig("REGION_COUNT", -1);
+    private static final int REGION_COUNT = -1; //getIntegerConfig("REGION_COUNT", -1);
     private static final boolean USE_SHARED_ARENA = true; //getBooleanConfig("USE_SHARED_ARENA", true);
     private static final boolean USE_SHARED_REGION = true; //getBooleanConfig("USE_SHARED_REGION", true);
     private static final int MAP_CAPACITY = 1 << 17; //getIntegerConfig("MAP_CAPACITY", 1 << 17);
@@ -600,8 +600,8 @@ public class CalculateAverage_serkan_ozal {
             final int maxFastKeyCheckLength = 2 * Long.BYTES;
             final int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
 
-            long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
-            long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
+            long wordA1 = word1; // != 0 ? word1 : U.getLong(keyStartAddress);
+            long wordA2 = word2; // != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
 
             long wordB1 = U.getLong(data, keyStartOffset);
             long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
