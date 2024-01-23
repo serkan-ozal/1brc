@@ -65,7 +65,7 @@ public class CalculateAverage_serkan_ozal {
     // Get configurations
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     private static final boolean VERBOSE = false; //getBooleanConfig("VERBOSE", false);
-    private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors(); //getIntegerConfig("THREAD_COUNT", Runtime.getRuntime().availableProcessors());
+    private static final int THREAD_COUNT = 8; //getIntegerConfig("THREAD_COUNT", Runtime.getRuntime().availableProcessors());
     private static final boolean USE_VTHREADS = false; //getBooleanConfig("USE_VTHREADS", false);
     private static final int VTHREAD_COUNT = 1024; //getIntegerConfig("VTHREAD_COUNT", 1024);
     private static final int REGION_COUNT = -1; //getIntegerConfig("REGION_COUNT", -1);
@@ -389,9 +389,9 @@ public class CalculateAverage_serkan_ozal {
     // Credits: merykitty
     private static long extractValue(long regionPtr, OpenMap map, long mapOffset) {
         long word = U.getLong(regionPtr);
-        if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-            word = Long.reverseBytes(word);
-        }
+//        if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+//            word = Long.reverseBytes(word);
+//        }
 
         // Parse and extract value
         int decimalSepPos = Long.numberOfTrailingZeros(~word & 0x10101000);
@@ -642,10 +642,10 @@ public class CalculateAverage_serkan_ozal {
 
             long wordA = U.getLong(keyStartAddress + i);
             long wordB = U.getLong(data, keyStartOffset + i);
-            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                wordA = Long.reverseBytes(wordA);
-                wordB = Long.reverseBytes(wordB);
-            }
+//            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+//                wordA = Long.reverseBytes(wordA);
+//                wordB = Long.reverseBytes(wordB);
+//            }
             int halfShift = (Long.BYTES - (keyLength & 0x00000007)) << 2;
             long mask = (0xFFFFFFFFFFFFFFFFL >>> halfShift) >> halfShift;
             wordA = wordA & mask;
