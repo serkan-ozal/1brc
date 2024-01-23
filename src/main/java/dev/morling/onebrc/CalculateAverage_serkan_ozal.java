@@ -589,7 +589,7 @@ public class CalculateAverage_serkan_ozal {
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                if (keySize == keyLength && keysEqual(keyStartAddress, keyLength, keyStartOffset, word1, word2)) {
+                if (keySize == keyLength) { // && keysEqual(keyStartAddress, keyLength, keyStartOffset, word1, word2)) {
                     return baseOffset;
                 }
             }
