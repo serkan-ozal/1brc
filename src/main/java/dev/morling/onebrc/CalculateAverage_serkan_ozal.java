@@ -261,7 +261,6 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private void processRegion() throws Exception {
-            this.map = new OpenMap();
             boolean arenaGiven = arena != null;
             // If no shared global memory arena is used, create and use its own local memory arena
             Arena a = arenaGiven ? arena : Arena.ofConfined();
@@ -286,38 +285,39 @@ public class CalculateAverage_serkan_ozal {
                 // Close current processor's own local memory arena (if no shared global memory arena is used) now
                 // and merge its own results after then.
 
-                boolean merged = result.tryMergeInto(map);
-                if (VERBOSE && merged) {
-                    System.out.println("[Processor-" + Thread.currentThread().getName() + "] Result merged at " + System.currentTimeMillis());
-                }
-                if (!merged) {
-                    if (!arenaGiven) {
-                        a.close();
-                        a = null;
-                        if (VERBOSE) {
-                            System.out.println("[Processor-" + Thread.currentThread().getName() + "] Arena closed at " + System.currentTimeMillis());
-                        }
-                    }
-                    result.mergeInto(map);
-                    if (VERBOSE) {
-                        System.out.println("[Processor-" + Thread.currentThread().getName() + "] Result merged at " + System.currentTimeMillis());
-                    }
-                }
+//                boolean merged = result.tryMergeInto(map);
+//                if (VERBOSE && merged) {
+//                    System.out.println("[Processor-" + Thread.currentThread().getName() + "] Result merged at " + System.currentTimeMillis());
+//                }
+//                if (!merged) {
+//                    if (!arenaGiven) {
+//                        a.close();
+//                        a = null;
+//                        if (VERBOSE) {
+//                            System.out.println("[Processor-" + Thread.currentThread().getName() + "] Arena closed at " + System.currentTimeMillis());
+//                        }
+//                    }
+//                    result.mergeInto(map);
+//                    if (VERBOSE) {
+//                        System.out.println("[Processor-" + Thread.currentThread().getName() + "] Result merged at " + System.currentTimeMillis());
+//                    }
+//                }
             }
             finally {
-                // If local memory arena is managed here and not closed yet, close it here
-                if (!arenaGiven && a != null) {
-                    a.close();
-                    if (VERBOSE) {
-                        System.out.println("[Processor-" + Thread.currentThread().getName() + "] Arena closed at " + System.currentTimeMillis());
-                    }
-                }
+//                // If local memory arena is managed here and not closed yet, close it here
+//                if (!arenaGiven && a != null) {
+//                    a.close();
+//                    if (VERBOSE) {
+//                        System.out.println("[Processor-" + Thread.currentThread().getName() + "] Arena closed at " + System.currentTimeMillis());
+//                    }
+//                }
             }
         }
 
         private void doProcessRegion(long regionStart, long regionEnd) {
             final long regionMainLimit = regionEnd - MAX_LINE_LENGTH;
 
+            this.map = new OpenMap();
             long regionPtr;
 
             // Read and process region - main
