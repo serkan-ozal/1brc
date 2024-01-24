@@ -318,9 +318,7 @@ public class CalculateAverage_serkan_ozal {
         private void doProcessRegion(long regionStart, long regionEnd) {
             final long regionMainLimit = regionEnd - MAX_LINE_LENGTH;
 
-            OpenMap map = new OpenMap();
             long regionPtr;
-
 
             // Read and process region - main
             for (regionPtr = regionStart; regionPtr < regionMainLimit;) {
