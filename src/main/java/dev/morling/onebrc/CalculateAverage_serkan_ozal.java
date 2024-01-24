@@ -606,20 +606,22 @@ public class CalculateAverage_serkan_ozal {
             long wordB1 = U.getLong(data, keyStartOffset);
             long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
 
-            int byteCount1 = Math.min(Long.BYTES, keyCheckLength);
-            int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
+            if (wordA1 + wordA2 + wordB1 + wordB2 != 0) {
+                return true;
+            }
 
-            int shift1 = (Long.BYTES - byteCount1) << 3;
-            long mask1 = 0xFFFFFFFFFFFFFFFFL >>> shift1;
-
-            int halfShift2 = (Long.BYTES - byteCount2) << 2;
-            long mask2 = (0xFFFFFFFFFFFFFFFFL >>> halfShift2) >> halfShift2;
-
-            wordA1 = wordA1 & mask1;
-            wordA2 = wordA2 & mask2;
-
-            return wordA1 == wordB1 && wordA2 == wordB2;
-
+//            int byteCount1 = Math.min(Long.BYTES, keyCheckLength);
+//            int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
+//
+//            int shift1 = (Long.BYTES - byteCount1) << 3;
+//            long mask1 = 0xFFFFFFFFFFFFFFFFL >>> shift1;
+//
+//            int halfShift2 = (Long.BYTES - byteCount2) << 2;
+//            long mask2 = (0xFFFFFFFFFFFFFFFFL >>> halfShift2) >> halfShift2;
+//
+//            wordA1 = wordA1 & mask1;
+//            wordA2 = wordA2 & mask2;
+//
 //            if (keyCheckLength == keyLength) {
 //                return wordA1 == wordB1 && wordA2 == wordB2;
 //            }
@@ -627,28 +629,28 @@ public class CalculateAverage_serkan_ozal {
 //            if (wordA1 != wordB1 || wordA2 != wordB2) {
 //                return false;
 //            }
-//
-//            // Compare remaining parts of the keys
-//
-//            int alignedKeyLength = keyLength & 0xFFFFFFF8;
-//            int i;
-//            for (i = maxFastKeyCheckLength; i < alignedKeyLength; i += Long.BYTES) {
-//                if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
-//                    return false;
-//                }
+
+            // Compare remaining parts of the keys
+
+            int alignedKeyLength = keyLength & 0xFFFFFFF8;
+            int i;
+            for (i = maxFastKeyCheckLength; i < alignedKeyLength; i += Long.BYTES) {
+                if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
+                    return false;
+                }
+            }
+
+            long wordA = U.getLong(keyStartAddress + i);
+            long wordB = U.getLong(data, keyStartOffset + i);
+//            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+//                wordA = Long.reverseBytes(wordA);
+//                wordB = Long.reverseBytes(wordB);
 //            }
-//
-//            long wordA = U.getLong(keyStartAddress + i);
-//            long wordB = U.getLong(data, keyStartOffset + i);
-////            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-////                wordA = Long.reverseBytes(wordA);
-////                wordB = Long.reverseBytes(wordB);
-////            }
-//            int halfShift = (Long.BYTES - (keyLength & 0x00000007)) << 2;
-//            long mask = (0xFFFFFFFFFFFFFFFFL >>> halfShift) >> halfShift;
-//            wordA = wordA & mask;
-//            // No need to mask "wordB" (word from key in the map), because it is already padded with 0s
-//            return wordA == wordB;
+            int halfShift = (Long.BYTES - (keyLength & 0x00000007)) << 2;
+            long mask = (0xFFFFFFFFFFFFFFFFL >>> halfShift) >> halfShift;
+            wordA = wordA & mask;
+            // No need to mask "wordB" (word from key in the map), because it is already padded with 0s
+            return wordA == wordB;
         }
 
         private void putValue(long baseOffset, int value) {
