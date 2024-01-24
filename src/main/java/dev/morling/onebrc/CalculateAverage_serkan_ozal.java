@@ -551,24 +551,37 @@ public class CalculateAverage_serkan_ozal {
         }
 
         // Credits: merykitty
-        private static int calculateKeyHash(long address, int keyLength) {
+        private static int calculateKeyHash(long address, long word1, long word2, int keyLength) {
             int seed = 0x9E3779B9;
             int rotate = 5;
             int x, y;
-            if (keyLength >= Integer.BYTES) {
-                x = U.getInt(address);
-                y = U.getInt(address + keyLength - Integer.BYTES);
-            }
-            else {
-                x = U.getByte(address);
-                y = U.getByte(address + keyLength - Byte.BYTES);
+            if (word1 == 0 && word2 == 0) {
+                if (keyLength >= Integer.BYTES) {
+                    x = U.getInt(address);
+                    y = U.getInt(address + keyLength - Integer.BYTES);
+                }
+                else {
+                    x = U.getByte(address);
+                    y = U.getByte(address + keyLength - Byte.BYTES);
+                }
+            } else {
+                if (keyLength >= Integer.BYTES) {
+                    x = (int) word1; // U.getInt(address);
+                    y = (int) (word1 >>> 32); // U.getInt(address + keyLength - Integer.BYTES);
+                    int shift = 8 * (4 - (keyLength & 0x03));
+                    y = y << shift;
+                    y = y >>> shift;
+                } else {
+                    x = (int) (word1 & 0x000000FF); //U.getByte(address);
+                    y = (int) ((word1 >> 8) & 0x000000FF); //U.getByte(address + keyLength - Byte.BYTES);
+                }
             }
             return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
         }
 
         private long putKey(long keyStartAddress, int keyLength, long word1, long word2) {
             // Calculate hash of key
-            int keyHash = calculateKeyHash(keyStartAddress, keyLength);
+            int keyHash = calculateKeyHash(keyStartAddress, word1, word2, keyLength);
             // and get the position of the entry in the linear map based on calculated hash
             int idx = keyHash & ENTRY_HASH_MASK;
 
