@@ -347,17 +347,17 @@ public class CalculateAverage_serkan_ozal {
             int delimiterPos = 0;
 
             long word1 = U.getLong(keyStartPtr);
-            long word2 = U.getLong(keyStartPtr + Long.BYTES);
+//            long word2 = U.getLong(keyStartPtr + Long.BYTES);
 
             long match1 = word1 ^ 0x3B3B3B3B3B3B3B3BL;
             long delimiterMask1 = (match1 - 0x0101010101010101L) & (~match1 & 0x8080808080808080L);
             int delimiterPos1 = Long.numberOfTrailingZeros(delimiterMask1) >>> 3;
             delimiterPos += delimiterPos1;
 
-            long match2 = word2 ^ 0x3B3B3B3B3B3B3B3BL;
-            long delimiterMask2 = (match2 - 0x0101010101010101L) & (~match2 & 0x8080808080808080L);
-            int delimiterPos2 = Long.numberOfTrailingZeros(delimiterMask2) >>> 3;
-            delimiterPos += ((delimiterPos1 / Long.BYTES) * delimiterPos2);
+//            long match2 = word2 ^ 0x3B3B3B3B3B3B3B3BL;
+//            long delimiterMask2 = (match2 - 0x0101010101010101L) & (~match2 & 0x8080808080808080L);
+//            int delimiterPos2 = Long.numberOfTrailingZeros(delimiterMask2) >>> 3;
+//            delimiterPos += ((delimiterPos1 / Long.BYTES) * delimiterPos2);
 
             regionPtr += delimiterPos;
 
@@ -371,7 +371,7 @@ public class CalculateAverage_serkan_ozal {
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // Put key and get map offset to put value
-            long mapOffset = map.putKey(keyStartPtr, keyLength, word1, word2);
+            long mapOffset = map.putKey(keyStartPtr, keyLength, word1, 0L);
 
             // Extract value, put it into map and return next position in the region to continue processing from there
             return extractValue(regionPtr, map, mapOffset);
@@ -551,37 +551,24 @@ public class CalculateAverage_serkan_ozal {
         }
 
         // Credits: merykitty
-        private static int calculateKeyHash(long address, long word1, long word2, int keyLength) {
+        private static int calculateKeyHash(long address, int keyLength) {
             int seed = 0x9E3779B9;
             int rotate = 5;
             int x, y;
-            if (word1 == 0 && word2 == 0) {
-                if (keyLength >= Integer.BYTES) {
-                    x = U.getInt(address);
-                    y = U.getInt(address + keyLength - Integer.BYTES);
-                }
-                else {
-                    x = U.getByte(address);
-                    y = U.getByte(address + keyLength - Byte.BYTES);
-                }
-            } else {
-                if (keyLength >= Integer.BYTES) {
-                    x = (int) word1; // U.getInt(address);
-                    y = (int) (word1 >>> 32); // U.getInt(address + keyLength - Integer.BYTES);
-                    int shift = 8 * (4 - (keyLength & 0x03));
-                    y = y << shift;
-                    y = y >>> shift;
-                } else {
-                    x = (int) (word1 & 0x000000FF); //U.getByte(address);
-                    y = (int) ((word1 >> 8) & 0x000000FF); //U.getByte(address + keyLength - Byte.BYTES);
-                }
+            if (keyLength >= Integer.BYTES) {
+                x = U.getInt(address);
+                y = U.getInt(address + keyLength - Integer.BYTES);
+            }
+            else {
+                x = U.getByte(address);
+                y = U.getByte(address + keyLength - Byte.BYTES);
             }
             return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
         }
 
         private long putKey(long keyStartAddress, int keyLength, long word1, long word2) {
             // Calculate hash of key
-            int keyHash = calculateKeyHash(keyStartAddress, word1, word2, keyLength);
+            int keyHash = calculateKeyHash(keyStartAddress, keyLength);
             // and get the position of the entry in the linear map based on calculated hash
             int idx = keyHash & ENTRY_HASH_MASK;
 
