@@ -361,7 +361,7 @@ public class CalculateAverage_serkan_ozal {
 
             regionPtr += delimiterPos;
 
-            if (delimiterPos == 2 * Long.BYTES) {
+            if (delimiterPos == Long.BYTES) {
                 for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
                     ;
             }
