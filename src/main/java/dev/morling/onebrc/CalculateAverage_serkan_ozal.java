@@ -600,8 +600,8 @@ public class CalculateAverage_serkan_ozal {
             int maxFastKeyCheckLength = 2 * Long.BYTES;
             int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
 
-            long wordA1 = word1; // != 0 ? word1 : U.getLong(keyStartAddress);
-            long wordA2 = word2; // != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
+            long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
+            long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
 
             long wordB1 = U.getLong(data, keyStartOffset);
             long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
