@@ -603,8 +603,8 @@ public class CalculateAverage_serkan_ozal {
             long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
             long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
 
-            long wordB1 = U.getLong(data, keyStartOffset);
-            long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
+            long wordB1 = 0; //U.getLong(data, keyStartOffset);
+            long wordB2 = 0; //U.getLong(data, keyStartOffset + Long.BYTES);
 
             if (wordA1 + wordA2 + wordB1 + wordB2 != 0) {
                 return true;
