@@ -231,6 +231,7 @@ public class CalculateAverage_serkan_ozal {
         private final long start;
         private final long end;
         private final long size;
+        private OpenMap map;
         private final Result result;
 
         private RegionProcessor(Request request) {
@@ -250,7 +251,7 @@ public class CalculateAverage_serkan_ozal {
             }
             try {
                 processRegion();
-                return new Response(null);
+                return new Response(map);
             }
             finally {
                 if (VERBOSE) {
@@ -260,6 +261,7 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private void processRegion() throws Exception {
+            this.map = new OpenMap();
             boolean arenaGiven = arena != null;
             // If no shared global memory arena is used, create and use its own local memory arena
             Arena a = arenaGiven ? arena : Arena.ofConfined();
@@ -271,7 +273,7 @@ public class CalculateAverage_serkan_ozal {
                 long regionStart = regionGiven ? (r.address() + start) : r.address();
                 long regionEnd = regionStart + size;
 
-                OpenMap map = doProcessRegion(regionStart, regionEnd);
+                doProcessRegion(regionStart, regionEnd);
                 if (VERBOSE) {
                     System.out.println("[Processor-" + Thread.currentThread().getName() + "] Region processed at " + System.currentTimeMillis());
                 }
@@ -313,15 +315,16 @@ public class CalculateAverage_serkan_ozal {
             }
         }
 
-        private OpenMap doProcessRegion(long regionStart, long regionEnd) {
+        private void doProcessRegion(long regionStart, long regionEnd) {
             final long regionMainLimit = regionEnd - MAX_LINE_LENGTH;
 
             OpenMap map = new OpenMap();
             long regionPtr;
 
+
             // Read and process region - main
             for (regionPtr = regionStart; regionPtr < regionMainLimit;) {
-                regionPtr = doProcessLine(map, regionPtr);
+                regionPtr = doProcessLine(regionPtr);
             }
 
             // Read and process region - tail
@@ -336,11 +339,9 @@ public class CalculateAverage_serkan_ozal {
                     i++;
                 }
             }
-
-            return map;
         }
 
-        private long doProcessLine(OpenMap map, long regionPtr) {
+        private long doProcessLine(long regionPtr) {
             // Find key/value separator
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
             long keyStartPtr = regionPtr;
