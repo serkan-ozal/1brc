@@ -231,7 +231,6 @@ public class CalculateAverage_serkan_ozal {
         private final long start;
         private final long end;
         private final long size;
-        private final OpenMap map;
         private final Result result;
 
         private RegionProcessor(Request request) {
@@ -241,7 +240,6 @@ public class CalculateAverage_serkan_ozal {
             this.start = request.start;
             this.end = request.end;
             this.size = end - start;
-            this.map = new OpenMap();
             this.result = request.result;
         }
 
@@ -252,7 +250,7 @@ public class CalculateAverage_serkan_ozal {
             }
             try {
                 processRegion();
-                return new Response(map);
+                return new Response(null);
             }
             finally {
                 if (VERBOSE) {
@@ -273,7 +271,7 @@ public class CalculateAverage_serkan_ozal {
                 long regionStart = regionGiven ? (r.address() + start) : r.address();
                 long regionEnd = regionStart + size;
 
-                doProcessRegion(regionStart, regionEnd);
+                OpenMap map = doProcessRegion(regionStart, regionEnd);
                 if (VERBOSE) {
                     System.out.println("[Processor-" + Thread.currentThread().getName() + "] Region processed at " + System.currentTimeMillis());
                 }
@@ -315,14 +313,15 @@ public class CalculateAverage_serkan_ozal {
             }
         }
 
-        private void doProcessRegion(long regionStart, long regionEnd) {
+        private OpenMap doProcessRegion(long regionStart, long regionEnd) {
             final long regionMainLimit = regionEnd - MAX_LINE_LENGTH;
 
+            OpenMap map = new OpenMap();
             long regionPtr;
 
             // Read and process region - main
             for (regionPtr = regionStart; regionPtr < regionMainLimit;) {
-                regionPtr = doProcessLine(regionPtr);
+                regionPtr = doProcessLine(map, regionPtr);
             }
 
             // Read and process region - tail
@@ -337,9 +336,11 @@ public class CalculateAverage_serkan_ozal {
                     i++;
                 }
             }
+
+            return map;
         }
 
-        private long doProcessLine(long regionPtr) {
+        private long doProcessLine(OpenMap map, long regionPtr) {
             // Find key/value separator
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
             long keyStartPtr = regionPtr;
@@ -597,26 +598,28 @@ public class CalculateAverage_serkan_ozal {
 
         private boolean keysEqual(long keyStartAddress, int keyLength, int keyStartOffset,
                                   long word1, long word2) {
-            int maxFastKeyCheckLength = 2 * Long.BYTES;
-            int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
+            final int maxFastKeyCheckLength = 2 * Long.BYTES;
+            final int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
 
             long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
             long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
 
+            long wordB1 = U.getLong(data, keyStartOffset);
+            long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
+
             int byteCount1 = Math.min(Long.BYTES, keyCheckLength);
+            int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
+
             int shift1 = (Long.BYTES - byteCount1) << 3;
             long mask1 = 0xFFFFFFFFFFFFFFFFL >>> shift1;
-            wordA1 = wordA1 & mask1;
 
-            int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
             int halfShift2 = (Long.BYTES - byteCount2) << 2;
             long mask2 = (0xFFFFFFFFFFFFFFFFL >>> halfShift2) >> halfShift2;
+
+            wordA1 = wordA1 & mask1;
             wordA2 = wordA2 & mask2;
 
             if (keyCheckLength == keyLength) {
-                long wordB1 = U.getLong(data, keyStartOffset);
-                long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
-
                 return wordA1 == wordB1 && wordA2 == wordB2;
             }
 
