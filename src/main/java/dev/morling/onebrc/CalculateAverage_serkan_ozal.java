@@ -604,15 +604,13 @@ public class CalculateAverage_serkan_ozal {
             long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
 
             int byteCount1 = Math.min(Long.BYTES, keyCheckLength);
-            int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
-
             int shift1 = (Long.BYTES - byteCount1) << 3;
             long mask1 = 0xFFFFFFFFFFFFFFFFL >>> shift1;
+            wordA1 = wordA1 & mask1;
 
+            int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
             int halfShift2 = (Long.BYTES - byteCount2) << 2;
             long mask2 = (0xFFFFFFFFFFFFFFFFL >>> halfShift2) >> halfShift2;
-
-            wordA1 = wordA1 & mask1;
             wordA2 = wordA2 & mask2;
 
             if (keyCheckLength == keyLength) {
