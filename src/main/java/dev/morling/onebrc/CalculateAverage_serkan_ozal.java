@@ -285,32 +285,32 @@ public class CalculateAverage_serkan_ozal {
                 // Close current processor's own local memory arena (if no shared global memory arena is used) now
                 // and merge its own results after then.
 
-//                boolean merged = result.tryMergeInto(map);
-//                if (VERBOSE && merged) {
-//                    System.out.println("[Processor-" + Thread.currentThread().getName() + "] Result merged at " + System.currentTimeMillis());
-//                }
-//                if (!merged) {
-//                    if (!arenaGiven) {
-//                        a.close();
-//                        a = null;
-//                        if (VERBOSE) {
-//                            System.out.println("[Processor-" + Thread.currentThread().getName() + "] Arena closed at " + System.currentTimeMillis());
-//                        }
-//                    }
-//                    result.mergeInto(map);
-//                    if (VERBOSE) {
-//                        System.out.println("[Processor-" + Thread.currentThread().getName() + "] Result merged at " + System.currentTimeMillis());
-//                    }
-//                }
+                boolean merged = result.tryMergeInto(map);
+                if (VERBOSE && merged) {
+                    System.out.println("[Processor-" + Thread.currentThread().getName() + "] Result merged at " + System.currentTimeMillis());
+                }
+                if (!merged) {
+                    if (!arenaGiven) {
+                        a.close();
+                        a = null;
+                        if (VERBOSE) {
+                            System.out.println("[Processor-" + Thread.currentThread().getName() + "] Arena closed at " + System.currentTimeMillis());
+                        }
+                    }
+                    result.mergeInto(map);
+                    if (VERBOSE) {
+                        System.out.println("[Processor-" + Thread.currentThread().getName() + "] Result merged at " + System.currentTimeMillis());
+                    }
+                }
             }
             finally {
-//                // If local memory arena is managed here and not closed yet, close it here
-//                if (!arenaGiven && a != null) {
-//                    a.close();
-//                    if (VERBOSE) {
-//                        System.out.println("[Processor-" + Thread.currentThread().getName() + "] Arena closed at " + System.currentTimeMillis());
-//                    }
-//                }
+                // If local memory arena is managed here and not closed yet, close it here
+                if (!arenaGiven && a != null) {
+                    a.close();
+                    if (VERBOSE) {
+                        System.out.println("[Processor-" + Thread.currentThread().getName() + "] Arena closed at " + System.currentTimeMillis());
+                    }
+                }
             }
         }
 
@@ -346,31 +346,31 @@ public class CalculateAverage_serkan_ozal {
 
             int delimiterPos = 0;
 
-            long word1 = U.getLong(keyStartPtr);
-            long match1 = word1 ^ 0x3B3B3B3B3B3B3B3BL;
-            long delimiterMask1 = (match1 - 0x0101010101010101L) & (~match1 & 0x8080808080808080L);
-            int delimiterPos1 = Long.numberOfTrailingZeros(delimiterMask1) >>> 3;
-            delimiterPos += delimiterPos1;
+//            long word1 = U.getLong(keyStartPtr);
+//            long match1 = word1 ^ 0x3B3B3B3B3B3B3B3BL;
+//            long delimiterMask1 = (match1 - 0x0101010101010101L) & (~match1 & 0x8080808080808080L);
+//            int delimiterPos1 = Long.numberOfTrailingZeros(delimiterMask1) >>> 3;
+//            delimiterPos += delimiterPos1;
+//
+//            long word2 = U.getLong(keyStartPtr + Long.BYTES);
+//            long match2 = word2 ^ 0x3B3B3B3B3B3B3B3BL;
+//            long delimiterMask2 = (match2 - 0x0101010101010101L) & (~match2 & 0x8080808080808080L);
+//            int delimiterPos2 = Long.numberOfTrailingZeros(delimiterMask2) >>> 3;
+//            delimiterPos += ((delimiterPos1 / Long.BYTES) * delimiterPos2);
+//
+//            regionPtr += delimiterPos;
 
-            long word2 = U.getLong(keyStartPtr + Long.BYTES);
-            long match2 = word2 ^ 0x3B3B3B3B3B3B3B3BL;
-            long delimiterMask2 = (match2 - 0x0101010101010101L) & (~match2 & 0x8080808080808080L);
-            int delimiterPos2 = Long.numberOfTrailingZeros(delimiterMask2) >>> 3;
-            delimiterPos += ((delimiterPos1 / Long.BYTES) * delimiterPos2);
-
-            regionPtr += delimiterPos;
-
-            if (delimiterPos == 2 * Long.BYTES) {
+//            if (delimiterPos == 2 * Long.BYTES) {
                 for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
                     ;
-            }
+//            }
 
             int keyLength = (int) (regionPtr - keyStartPtr);
             regionPtr++;
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // Put key and get map offset to put value
-            long mapOffset = map.putKey(keyStartPtr, keyLength, word1, word2);
+            long mapOffset = map.putKey(keyStartPtr, keyLength, 0, 0);
 
             // Extract value, put it into map and return next position in the region to continue processing from there
             return extractValue(regionPtr, map, mapOffset);
