@@ -322,7 +322,41 @@ public class CalculateAverage_serkan_ozal {
 
             // Read and process region - main
             for (regionPtr = regionStart; regionPtr < regionMainLimit;) {
-                regionPtr = doProcessLine(regionPtr);
+                // Find key/value separator
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                long keyStartPtr = regionPtr;
+
+                int delimiterPos = 0;
+
+                long word1 = U.getLong(keyStartPtr);
+                long word2 = U.getLong(keyStartPtr + Long.BYTES);
+
+                long match1 = word1 ^ 0x3B3B3B3B3B3B3B3BL;
+                long delimiterMask1 = (match1 - 0x0101010101010101L) & (~match1 & 0x8080808080808080L);
+                int delimiterPos1 = Long.numberOfTrailingZeros(delimiterMask1) >>> 3;
+                delimiterPos += delimiterPos1;
+
+                long match2 = word2 ^ 0x3B3B3B3B3B3B3B3BL;
+                long delimiterMask2 = (match2 - 0x0101010101010101L) & (~match2 & 0x8080808080808080L);
+                int delimiterPos2 = Long.numberOfTrailingZeros(delimiterMask2) >>> 3;
+                delimiterPos += ((delimiterPos1 / Long.BYTES) * delimiterPos2);
+
+                regionPtr += delimiterPos;
+
+                if (delimiterPos == 2 * Long.BYTES) {
+                    for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
+                        ;
+                }
+
+                int keyLength = (int) (regionPtr - keyStartPtr);
+                regionPtr++;
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                // Put key and get map offset to put value
+                long mapOffset = map.putKey(keyStartPtr, keyLength, word1, word2);
+
+                // Extract value, put it into map and return next position in the region to continue processing from there
+                regionPtr = extractValue(regionPtr, map, mapOffset);
             }
 
             // Read and process region - tail
@@ -339,43 +373,43 @@ public class CalculateAverage_serkan_ozal {
             }
         }
 
-        private long doProcessLine(long regionPtr) {
-            // Find key/value separator
-            ////////////////////////////////////////////////////////////////////////////////////////////////////////
-            long keyStartPtr = regionPtr;
-
-            int delimiterPos = 0;
-
-            long word1 = U.getLong(keyStartPtr);
+//        private long doProcessLine(long regionPtr) {
+//            // Find key/value separator
+//            ////////////////////////////////////////////////////////////////////////////////////////////////////////
+//            long keyStartPtr = regionPtr;
+//
+//            int delimiterPos = 0;
+//
+//            long word1 = U.getLong(keyStartPtr);
 //            long word2 = U.getLong(keyStartPtr + Long.BYTES);
-
-            long match1 = word1 ^ 0x3B3B3B3B3B3B3B3BL;
-            long delimiterMask1 = (match1 - 0x0101010101010101L) & (~match1 & 0x8080808080808080L);
-            int delimiterPos1 = Long.numberOfTrailingZeros(delimiterMask1) >>> 3;
-            delimiterPos += delimiterPos1;
-
+//
+//            long match1 = word1 ^ 0x3B3B3B3B3B3B3B3BL;
+//            long delimiterMask1 = (match1 - 0x0101010101010101L) & (~match1 & 0x8080808080808080L);
+//            int delimiterPos1 = Long.numberOfTrailingZeros(delimiterMask1) >>> 3;
+//            delimiterPos += delimiterPos1;
+//
 //            long match2 = word2 ^ 0x3B3B3B3B3B3B3B3BL;
 //            long delimiterMask2 = (match2 - 0x0101010101010101L) & (~match2 & 0x8080808080808080L);
 //            int delimiterPos2 = Long.numberOfTrailingZeros(delimiterMask2) >>> 3;
 //            delimiterPos += ((delimiterPos1 / Long.BYTES) * delimiterPos2);
-
-            regionPtr += delimiterPos;
-
-            if (delimiterPos == Long.BYTES) {
-                for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
-                    ;
-            }
-
-            int keyLength = (int) (regionPtr - keyStartPtr);
-            regionPtr++;
-            ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-            // Put key and get map offset to put value
-            long mapOffset = map.putKey(keyStartPtr, keyLength, word1, 0L);
-
-            // Extract value, put it into map and return next position in the region to continue processing from there
-            return extractValue(regionPtr, map, mapOffset);
-        }
+//
+//            regionPtr += delimiterPos;
+//
+//            if (delimiterPos == 2 * Long.BYTES) {
+//                for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
+//                    ;
+//            }
+//
+//            int keyLength = (int) (regionPtr - keyStartPtr);
+//            regionPtr++;
+//            ////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//            // Put key and get map offset to put value
+//            long mapOffset = map.putKey(keyStartPtr, keyLength, word1, word2);
+//
+//            // Extract value, put it into map and return next position in the region to continue processing from there
+//            return extractValue(regionPtr, map, mapOffset);
+//        }
 
     }
 
@@ -598,29 +632,29 @@ public class CalculateAverage_serkan_ozal {
 
         private boolean keysEqual(long keyStartAddress, int keyLength, int keyStartOffset,
                                   long word1, long word2) {
-            final int maxFastKeyCheckLength = Long.BYTES;
+            final int maxFastKeyCheckLength = 2 * Long.BYTES;
             final int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
 
             long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
-//            long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
+            long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
 
             long wordB1 = U.getLong(data, keyStartOffset);
-//            long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
+            long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
 
             int byteCount1 = Math.min(Long.BYTES, keyCheckLength);
-//            int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
+            int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
 
             int shift1 = (Long.BYTES - byteCount1) << 3;
             long mask1 = 0xFFFFFFFFFFFFFFFFL >>> shift1;
 
-//            int halfShift2 = (Long.BYTES - byteCount2) << 2;
-//            long mask2 = (0xFFFFFFFFFFFFFFFFL >>> halfShift2) >> halfShift2;
+            int halfShift2 = (Long.BYTES - byteCount2) << 2;
+            long mask2 = (0xFFFFFFFFFFFFFFFFL >>> halfShift2) >> halfShift2;
 
             wordA1 = wordA1 & mask1;
-//            wordA2 = wordA2 & mask2;
+            wordA2 = wordA2 & mask2;
 
             if (keyCheckLength == keyLength) {
-                return wordA1 == wordB1;
+                return wordA1 == wordB1 && wordA2 == wordB2;
             }
 
             // Compare remaining parts of the keys
