@@ -597,44 +597,37 @@ public class CalculateAverage_serkan_ozal {
 
         private boolean keysEqual(long keyStartAddress, int keyLength, int keyStartOffset,
                                   long word1, long word2) {
-            final int maxFastKeyCheckLength = 2 * Long.BYTES;
-            final int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
+            final int fastKeyCheckLength = Math.min(16, keyLength);
 
             long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
-            long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
-
-            long wordB1 = 0; //U.getLong(data, keyStartOffset);
-            long wordB2 = 0; //U.getLong(data, keyStartOffset + Long.BYTES);
-
-            if (wordA1 + wordA2 + wordB1 + wordB2 != 0) {
+            long wordB1 = U.getLong(data, keyStartOffset);
+            int shift1 = (8 - Math.min(8, fastKeyCheckLength)) << 3;
+            long mask1 = 0xFFFFFFFFFFFFFFFFL >>> shift1;
+            wordA1 = wordA1 & mask1;
+            if (wordA1 != wordB1) {
+                return false;
+            }
+            if (keyLength <= 8) {
                 return true;
             }
 
-//            int byteCount1 = Math.min(Long.BYTES, keyCheckLength);
-//            int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
-//
-//            int shift1 = (Long.BYTES - byteCount1) << 3;
-//            long mask1 = 0xFFFFFFFFFFFFFFFFL >>> shift1;
-//
-//            int halfShift2 = (Long.BYTES - byteCount2) << 2;
-//            long mask2 = (0xFFFFFFFFFFFFFFFFL >>> halfShift2) >> halfShift2;
-//
-//            wordA1 = wordA1 & mask1;
-//            wordA2 = wordA2 & mask2;
-//
-//            if (keyCheckLength == keyLength) {
-//                return wordA1 == wordB1 && wordA2 == wordB2;
-//            }
-//
-//            if (wordA1 != wordB1 || wordA2 != wordB2) {
-//                return false;
-//            }
+            long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + 8);
+            long wordB2 = U.getLong(data, keyStartOffset + 8);
+            int halfShift2 = (16 - fastKeyCheckLength) << 2;
+            long mask2 = (0xFFFFFFFFFFFFFFFFL >>> halfShift2) >> halfShift2;
+            wordA2 = wordA2 & mask2;
+            if (wordA2 != wordB2) {
+                return false;
+            }
+            if (keyLength <= 16) {
+                return true;
+            }
 
             // Compare remaining parts of the keys
 
             int alignedKeyLength = keyLength & 0xFFFFFFF8;
             int i;
-            for (i = maxFastKeyCheckLength; i < alignedKeyLength; i += Long.BYTES) {
+            for (i = 16; i < alignedKeyLength; i += Long.BYTES) {
                 if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
                     return false;
                 }
