@@ -656,7 +656,7 @@ public class CalculateAverage_serkan_ozal {
 
             int alignedKeyLength = keyLength & 0xFFFFFFF8;
             int i;
-            for (i = 0; i < alignedKeyLength; i += Long.BYTES) {
+            for (i = maxFastKeyCheckLength; i < alignedKeyLength; i += Long.BYTES) {
                 if (U.getLong(keyStartAddress + i) != U.getLong(entryKeyPtr + i)) {
                     return false;
                 }
