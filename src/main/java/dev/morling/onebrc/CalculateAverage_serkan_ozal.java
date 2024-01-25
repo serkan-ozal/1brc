@@ -325,18 +325,18 @@ public class CalculateAverage_serkan_ozal {
                 regionPtr = doProcessLine(regionPtr);
             }
 
-//            // Read and process region - tail
-//            for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
-//                byte b = U.getByte(i);
-//                if (b == KEY_VALUE_SEPARATOR) {
-//                    long baseOffset = map.putKey(j, (int) (i - j), 0, 0);
-//                    i = extractValue(i + 1, map, baseOffset);
-//                    j = i;
-//                }
-//                else {
-//                    i++;
-//                }
-//            }
+            // Read and process region - tail
+            for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
+                byte b = U.getByte(i);
+                if (b == KEY_VALUE_SEPARATOR) {
+                    long baseOffset = map.putKey(j, (int) (i - j), 0, 0);
+                    i = extractValue(i + 1, map, baseOffset);
+                    j = i;
+                }
+                else {
+                    i++;
+                }
+            }
         }
 
         private long doProcessLine(long regionPtr) {
@@ -619,31 +619,31 @@ public class CalculateAverage_serkan_ozal {
             wordA1 = wordA1 & mask1;
             wordA2 = wordA2 & mask2;
 
-            if (keyCheckLength == keyLength) {
+            //if (keyCheckLength == keyLength) {
                 return wordA1 == wordB1 && wordA2 == wordB2;
-            }
+            //}
 
             // Compare remaining parts of the keys
 
-            int alignedKeyLength = keyLength & 0xFFFFFFF8;
-            int i;
-            for (i = maxFastKeyCheckLength; i < alignedKeyLength; i += Long.BYTES) {
-                if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
-                    return false;
-                }
-            }
-
-            long wordA = U.getLong(keyStartAddress + i);
-            long wordB = U.getLong(data, keyStartOffset + i);
-//            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-//                wordA = Long.reverseBytes(wordA);
-//                wordB = Long.reverseBytes(wordB);
+//            int alignedKeyLength = keyLength & 0xFFFFFFF8;
+//            int i;
+//            for (i = maxFastKeyCheckLength; i < alignedKeyLength; i += Long.BYTES) {
+//                if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
+//                    return false;
+//                }
 //            }
-            int halfShift = (Long.BYTES - (keyLength & 0x00000007)) << 2;
-            long mask = (0xFFFFFFFFFFFFFFFFL >>> halfShift) >> halfShift;
-            wordA = wordA & mask;
-            // No need to mask "wordB" (word from key in the map), because it is already padded with 0s
-            return wordA == wordB;
+//
+//            long wordA = U.getLong(keyStartAddress + i);
+//            long wordB = U.getLong(data, keyStartOffset + i);
+////            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+////                wordA = Long.reverseBytes(wordA);
+////                wordB = Long.reverseBytes(wordB);
+////            }
+//            int halfShift = (Long.BYTES - (keyLength & 0x00000007)) << 2;
+//            long mask = (0xFFFFFFFFFFFFFFFFL >>> halfShift) >> halfShift;
+//            wordA = wordA & mask;
+//            // No need to mask "wordB" (word from key in the map), because it is already padded with 0s
+//            return wordA == wordB;
         }
 
         private void putValue(long baseOffset, int value) {
