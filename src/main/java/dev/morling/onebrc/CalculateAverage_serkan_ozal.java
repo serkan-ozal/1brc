@@ -622,11 +622,11 @@ public class CalculateAverage_serkan_ozal {
                 ByteVector entryKeyVector;
 //                try (var arena = Arena.ofConfined()) {
 //                    MemorySegment segment = MemorySegment.ofAddress(entryKeyPtr)
-//                            .reinterpret(BYTE_SPECIES.vectorByteSize(), arena, null);
+//                            .reinterpret(BYTE_SPECIES_SIZE, arena, null);
 //                    entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
 //                }
                 MemorySegment segment = MemorySegment.ofAddress(entryKeyPtr)
-                        .reinterpret(BYTE_SPECIES.vectorByteSize(), Arena.ofConfined(), null);
+                        .reinterpret(BYTE_SPECIES_SIZE, Arena.ofConfined(), null);
                 entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
                 long eqMask = keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
                 int eqCount = Long.numberOfTrailingZeros(~eqMask);
@@ -689,16 +689,16 @@ public class CalculateAverage_serkan_ozal {
             U.putInt(countPtr, U.getInt(countPtr) + 1);
             long minValuePtr = entryPtr + MIN_VALUE_OFFSET;
             short minValue = U.getShort(minValuePtr);
-//            if (value < minValue) {
-//                U.putShort(minValuePtr, (short) value);
-//            }
-            U.putShort(minValuePtr, (short) Math.min(minValue, value));
+            if (value < minValue) {
+                U.putShort(minValuePtr, (short) value);
+            }
+//            U.putShort(minValuePtr, (short) Math.min(minValue, value));
             long maxValuePtr = entryPtr + MAX_VALUE_OFFSET;
             short maxValue = U.getShort(maxValuePtr);
-//            if (value > maxValue) {
-//                U.putShort(maxValuePtr, (short) value);
-//            }
-            U.putShort(maxValuePtr, (short) Math.max(maxValue, value));
+            if (value > maxValue) {
+                U.putShort(maxValuePtr, (short) value);
+            }
+//            U.putShort(maxValuePtr, (short) Math.max(maxValue, value));
             long sumPtr = entryPtr + VALUE_SUM_OFFSET;
             U.putLong(sumPtr, value + U.getLong(sumPtr));
         }
