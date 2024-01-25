@@ -538,7 +538,7 @@ public class CalculateAverage_serkan_ozal {
         private static final int MAX_VALUE_OFFSET = 6;
         private static final int VALUE_SUM_OFFSET = 8;
         private static final int KEY_SIZE_OFFSET = 16;
-        private static final int KEY_OFFSET = 24;
+        private static final int KEY_OFFSET = 20;
 
         private static final int ENTRY_HASH_MASK = MAP_CAPACITY - 1;
         private static final int MAP_SIZE = ENTRY_SIZE * MAP_CAPACITY;
