@@ -549,15 +549,15 @@ public class CalculateAverage_serkan_ozal {
 
         private final long allocatedAddress;
         private final long dataAddress;
-        private final Arena dataArena;
-        private final MemorySegment dataMemorySegment;
+//        private final Arena dataArena;
+//        private final MemorySegment dataMemorySegment;
 
         private OpenMap() {
             this.allocatedAddress = U.allocateMemory(MAP_SIZE + 4096);
             this.dataAddress = (this.allocatedAddress + 4095) & (~4095);
-            this.dataArena = Arena.ofConfined();
-            this.dataMemorySegment = MemorySegment.ofAddress(dataAddress)
-                    .reinterpret(MAP_SIZE, this.dataArena, null);;
+//            this.dataArena = Arena.ofConfined();
+//            this.dataMemorySegment = MemorySegment.ofAddress(dataAddress)
+//                    .reinterpret(MAP_SIZE, this.dataArena, null);
         }
 
         // Credits: merykitty
