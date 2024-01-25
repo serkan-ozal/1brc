@@ -586,10 +586,9 @@ public class CalculateAverage_serkan_ozal {
             // and continue until find an available slot in case of hash collision
             // TODO Prevent infinite loop if all the slots are in use for other keys
             for (long entryPtr = dataAddress + (idx * ENTRY_SIZE);; entryPtr = (entryPtr + ENTRY_SIZE)) {
-                long entryKeyPtr = entryPtr + KEY_OFFSET;
-                long keyWord = U.getLong(entryKeyPtr);
+                long keySize = U.getInt(entryPtr + KEY_SIZE_OFFSET);
                 // Check whether current index is empty (no another key is inserted yet)
-                if (keyWord == 0) {
+                if (keySize == 0) {
                     // Initialize entry slot for new key
                     U.putShort(entryPtr + MIN_VALUE_OFFSET, Short.MAX_VALUE);
                     U.putShort(entryPtr + MAX_VALUE_OFFSET, Short.MIN_VALUE);
@@ -600,13 +599,13 @@ public class CalculateAverage_serkan_ozal {
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                if (keysEqual(keyVector, keyStartAddress, keyLength, entryKeyPtr, keyWord)) {
+                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryPtr + KEY_OFFSET)) {
                     return entryPtr;
                 }
             }
         }
 
-        private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, long entryKeyPtr, long keyWord) {
+        private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, long entryKeyPtr) {
 //            int keyCheckIdx = 0;
 //            if (keyVector != null) {
 //                // Use vectorized search for the comparison of keys.
@@ -634,7 +633,7 @@ public class CalculateAverage_serkan_ozal {
             long wordA1 = U.getLong(keyStartAddress);
             long wordA2 = U.getLong(keyStartAddress + Long.BYTES);
 
-            long wordB1 = keyWord; //U.getLong(entryKeyPtr);
+            long wordB1 = U.getLong(entryKeyPtr);
             long wordB2 = U.getLong(entryKeyPtr + Long.BYTES);
 
             int byteCount1 = Math.min(Long.BYTES, keyCheckLength);
@@ -677,14 +676,20 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private void putValue(long entryPtr, int value) {
-            U.putInt(entryPtr + COUNT_OFFSET,
-                    U.getInt(entryPtr+ COUNT_OFFSET) + 1);
-            U.putShort(entryPtr + MIN_VALUE_OFFSET,
-                    (short) Math.min(value, U.getShort(entryPtr + MIN_VALUE_OFFSET)));
-            U.putShort(entryPtr + MAX_VALUE_OFFSET,
-                    (short) Math.max(value, U.getShort(entryPtr + MAX_VALUE_OFFSET)));
-            U.putLong(entryPtr + VALUE_SUM_OFFSET,
-                    value + U.getLong(entryPtr + VALUE_SUM_OFFSET));
+            long countPtr = entryPtr + COUNT_OFFSET;
+            U.putInt(countPtr, U.getInt(countPtr) + 1);
+            long minValuePtr = entryPtr + MIN_VALUE_OFFSET;
+            short minValue = U.getShort(minValuePtr);
+            if (value < minValue) {
+                U.putShort(minValuePtr, (short) value);
+            }
+            long maxValuePtr = entryPtr + MAX_VALUE_OFFSET;
+            short maxValue = U.getShort(maxValuePtr);
+            if (value > maxValue) {
+                U.putShort(maxValuePtr, (short) value);
+            }
+            long sumPtr = entryPtr + VALUE_SUM_OFFSET;
+            U.putLong(sumPtr, value + U.getLong(sumPtr));
         }
 
         private void merge(Map<String, KeyResult> resultMap) {
