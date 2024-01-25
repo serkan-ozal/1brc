@@ -680,14 +680,16 @@ public class CalculateAverage_serkan_ozal {
             U.putInt(countPtr, U.getInt(countPtr) + 1);
             long minValuePtr = entryPtr + MIN_VALUE_OFFSET;
             short minValue = U.getShort(minValuePtr);
-            if (value < minValue) {
-                U.putShort(minValuePtr, (short) value);
-            }
+//            if (value < minValue) {
+//                U.putShort(minValuePtr, (short) value);
+//            }
+            U.putShort(minValuePtr, (short) Math.min(minValue, value));
             long maxValuePtr = entryPtr + MAX_VALUE_OFFSET;
             short maxValue = U.getShort(maxValuePtr);
-            if (value > maxValue) {
-                U.putShort(maxValuePtr, (short) value);
-            }
+//            if (value > maxValue) {
+//                U.putShort(maxValuePtr, (short) value);
+//            }
+            U.putShort(maxValuePtr, (short) Math.max(maxValue, value));
             long sumPtr = entryPtr + VALUE_SUM_OFFSET;
             U.putLong(sumPtr, value + U.getLong(sumPtr));
         }
