@@ -339,7 +339,7 @@ public class CalculateAverage_serkan_ozal {
             for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
                 byte b = U.getByte(i);
                 if (b == KEY_VALUE_SEPARATOR) {
-                    long baseOffset = map.putKey(j, (int) (i - j), 0, 0);
+                    long baseOffset = map.putKey(null, j, (int) (i - j));
                     i = extractValue(i + 1, map, baseOffset);
                     j = i;
                 }
@@ -354,59 +354,36 @@ public class CalculateAverage_serkan_ozal {
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
             long keyStartPtr = regionPtr;
 
-//            // Vectorized search for key/value separator
-//            ByteVector keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, region, regionPtr - regionAddress, NATIVE_BYTE_ORDER);
-//            int keyValueSepOffset = keyVector.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-//            // Check whether key/value separator is found in the first vector (city name is <= vector size)
-//            if (keyValueSepOffset == vectorSize) {
-//                regionPtr += vectorSize;
-//                keyValueSepOffset = 0;
-//                for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
-//                    ;
-//                // I have tried vectorized search for key/value separator in the remaining part,
-//                // but since majority (99%) of the city names <= 16 bytes
-//                // and other a few longer city names (have length < 16 and <= 32) not close to 32 bytes,
-//                // byte by byte search is better in terms of performance (according to my experiments) and simplicity.
-//            }
-//            regionPtr += keyValueSepOffset;
-
-            int delimiterPos = 0;
-
-            long word1 = U.getLong(keyStartPtr);
-            long word2 = U.getLong(keyStartPtr + Long.BYTES);
-
-            long match1 = word1 ^ 0x3B3B3B3B3B3B3B3BL;
-            long delimiterMask1 = (match1 - 0x0101010101010101L) & (~match1 & 0x8080808080808080L);
-            int delimiterPos1 = Long.numberOfTrailingZeros(delimiterMask1) >>> 3;
-            delimiterPos += delimiterPos1;
-
-            long match2 = word2 ^ 0x3B3B3B3B3B3B3B3BL;
-            long delimiterMask2 = (match2 - 0x0101010101010101L) & (~match2 & 0x8080808080808080L);
-            int delimiterPos2 = Long.numberOfTrailingZeros(delimiterMask2) >>> 3;
-            delimiterPos += ((delimiterPos1 >>> 3) * delimiterPos2);
-
-            regionPtr += delimiterPos;
-
-            if (delimiterPos == 2 * Long.BYTES) {
+            // Vectorized search for key/value separator
+            ByteVector keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, region, regionPtr - regionAddress, NATIVE_BYTE_ORDER);
+            int keyValueSepOffset = keyVector.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
+            // Check whether key/value separator is found in the first vector (city name is <= vector size)
+            if (keyValueSepOffset == vectorSize) {
+                regionPtr += vectorSize;
+                keyValueSepOffset = 0;
                 for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
                     ;
+                // I have tried vectorized search for key/value separator in the remaining part,
+                // but since majority (99%) of the city names <= 16 bytes
+                // and other a few longer city names (have length < 16 and <= 32) not close to 32 bytes,
+                // byte by byte search is better in terms of performance (according to my experiments) and simplicity.
             }
-
+            regionPtr += keyValueSepOffset;
             int keyLength = (int) (regionPtr - keyStartPtr);
             regionPtr++;
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // Put key and get map offset to put value
-            long mapOffset = map.putKey(keyStartPtr, keyLength, word1, word2);
+            long entryPtr = map.putKey(keyVector, keyStartPtr, keyLength);
 
             // Extract value, put it into map and return next position in the region to continue processing from there
-            return extractValue(regionPtr, map, mapOffset);
+            return extractValue(regionPtr, map, entryPtr);
         }
 
     }
 
     // Credits: merykitty
-    private static long extractValue(long regionPtr, OpenMap map, long mapOffset) {
+    private static long extractValue(long regionPtr, OpenMap map, long entryPtr) {
         long word = U.getLong(regionPtr);
         if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
             word = Long.reverseBytes(word);
@@ -422,7 +399,7 @@ public class CalculateAverage_serkan_ozal {
         int value = (int) ((absValue ^ signed) - signed);
 
         // Put extracted value into map
-        map.putValue(mapOffset, value);
+        map.putValue(entryPtr, value);
 
         // Return new position
         return regionPtr + (decimalSepPos >>> 3) + 3;
@@ -599,7 +576,7 @@ public class CalculateAverage_serkan_ozal {
             return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
         }
 
-        private long putKey(long keyStartAddress, int keyLength, long word1, long word2) {
+        private long putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
             // Calculate hash of key
             int keyHash = calculateKeyHash(keyStartAddress, keyLength);
             // and get the position of the entry in the linear map based on calculated hash
@@ -622,14 +599,13 @@ public class CalculateAverage_serkan_ozal {
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                if (keySize == keyLength && keysEqual(keyStartAddress, keyLength, entryPtr + KEY_OFFSET, word1, word2)) {
+                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryPtr + KEY_OFFSET)) {
                     return entryPtr;
                 }
             }
         }
 
-        private boolean keysEqual(long keyStartAddress, int keyLength, long entryKeyPtr,
-                                  long word1, long word2) {
+        private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, long entryKeyPtr) {
 //            int keyCheckIdx = 0;
 //            if (keyVector != null) {
 //                // Use vectorized search for the comparison of keys.
@@ -654,8 +630,8 @@ public class CalculateAverage_serkan_ozal {
             final int maxFastKeyCheckLength = 2 * Long.BYTES;
             final int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
 
-            long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
-            long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
+            long wordA1 = U.getLong(keyStartAddress);
+            long wordA2 = U.getLong(keyStartAddress + Long.BYTES);
 
             long wordB1 = U.getLong(entryKeyPtr);
             long wordB2 = U.getLong(entryKeyPtr + Long.BYTES);
