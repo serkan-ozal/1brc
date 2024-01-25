@@ -587,30 +587,25 @@ public class CalculateAverage_serkan_ozal {
                     U.copyMemory(null, keyStartAddress, data, keyStartOffset, keyLength);
                     return baseOffset;
                 }
-                if (keySize != keyLength) {
-                    continue;
-                }
-                long key1 = U.getLong(data, keyStartOffset);
-                long key2 = U.getLong(data, keyStartOffset + 8);
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                if (keysEqual(keyStartAddress, keyLength, keyStartOffset, word1, word2, key1, key2)) {
+                if (keySize == keyLength && keysEqual(keyStartAddress, keyLength, keyStartOffset, word1, word2)) {
                     return baseOffset;
                 }
             }
         }
 
         private boolean keysEqual(long keyStartAddress, int keyLength, int keyStartOffset,
-                                  long word1, long word2, long key1, long key2) {
+                                  long word1, long word2) {
             final int maxFastKeyCheckLength = 2 * Long.BYTES;
             final int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
 
             long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
             long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
 
-//            long wordB1 = U.getLong(data, keyStartOffset);
-//            long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
+            long wordB1 = U.getLong(data, keyStartOffset);
+            long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
 
             int byteCount1 = Math.min(Long.BYTES, keyCheckLength);
             int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
@@ -625,7 +620,7 @@ public class CalculateAverage_serkan_ozal {
             wordA2 = wordA2 & mask2;
 
             if (keyCheckLength == keyLength) {
-                return wordA1 == key1 && wordA2 == key2;
+                return wordA1 == wordB1 && wordA2 == wordB2;
             }
 
             // Compare remaining parts of the keys
