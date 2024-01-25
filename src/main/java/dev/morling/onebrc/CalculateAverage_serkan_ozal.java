@@ -16,6 +16,7 @@
 package dev.morling.onebrc;
 
 import jdk.incubator.vector.ByteVector;
+import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 import sun.misc.Unsafe;
@@ -549,7 +550,7 @@ public class CalculateAverage_serkan_ozal {
 
         private final long allocatedAddress;
         private final long dataAddress;
-        private final Arena keyCheckArena = Arena.ofConfined();
+//        private final Arena keyCheckArena = Arena.ofConfined();
 //        private final Arena dataArena;
 //        private final MemorySegment dataMemorySegment;
 
@@ -562,12 +563,27 @@ public class CalculateAverage_serkan_ozal {
         }
 
         // Credits: merykitty
-        private static int calculateKeyHash(long address, int keyLength) {
+        private static int calculateKeyHash(long address, ByteVector keyVector, int keyLength) {
             int seed = 0x9E3779B9;
             int rotate = 5;
             int x, y;
-            if (keyLength >= Integer.BYTES) {
-                x = U.getInt(address);
+            if (keyLength >= Long.BYTES) {
+                if (keyVector != null) {
+                    IntVector iv = keyVector.reinterpretAsInts();
+                    x = iv.lane(0);
+                    y = iv.lane(1);
+                } else {
+                    x = U.getInt(address);
+                    y = U.getInt(address + keyLength - Integer.BYTES);
+                }
+            }
+            else if (keyLength >= Integer.BYTES) {
+                if (keyVector != null) {
+                    IntVector iv = keyVector.reinterpretAsInts();
+                    x = iv.lane(0); //U.getInt(address);
+                } else {
+                    x = U.getInt(address);
+                }
                 y = U.getInt(address + keyLength - Integer.BYTES);
             }
             else {
@@ -579,7 +595,7 @@ public class CalculateAverage_serkan_ozal {
 
         private long putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
             // Calculate hash of key
-            int keyHash = calculateKeyHash(keyStartAddress, keyLength);
+            int keyHash = calculateKeyHash(keyStartAddress, keyVector, keyLength);
             // and get the position of the entry in the linear map based on calculated hash
             int idx = keyHash & ENTRY_HASH_MASK;
 
