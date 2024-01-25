@@ -648,16 +648,20 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private void putValue(long entryPtr, int value) {
-            U.putInt(entryPtr + COUNT_OFFSET, U.getInt(entryPtr + COUNT_OFFSET) + 1);
-            short minValue = U.getShort(entryPtr + MIN_VALUE_OFFSET);
+            long countPtr = entryPtr + COUNT_OFFSET;
+            U.putInt(countPtr, U.getInt(countPtr) + 1);
+            long minValuePtr = entryPtr + MIN_VALUE_OFFSET;
+            short minValue = U.getShort(minValuePtr);
             if (value < minValue) {
-                U.putShort(entryPtr + MIN_VALUE_OFFSET, (short) value);
+                U.putShort(minValuePtr, (short) value);
             }
-            short maxValue = U.getShort(entryPtr + MAX_VALUE_OFFSET);
+            long maxValuePtr = entryPtr + MAX_VALUE_OFFSET;
+            short maxValue = U.getShort(maxValuePtr);
             if (value > maxValue) {
-                U.putShort(entryPtr + MAX_VALUE_OFFSET, (short) value);
+                U.putShort(maxValuePtr, (short) value);
             }
-            U.putLong(entryPtr + VALUE_SUM_OFFSET, value + U.getLong(entryPtr + VALUE_SUM_OFFSET));
+            long sumPtr = entryPtr + VALUE_SUM_OFFSET;
+            U.putLong(sumPtr, value + U.getLong(sumPtr));
         }
 
         private void merge(Map<String, KeyResult> resultMap) {
