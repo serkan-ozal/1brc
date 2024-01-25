@@ -535,13 +535,13 @@ public class CalculateAverage_serkan_ozal {
         // ================================
         // 128 bytes - total
 
-        private static final int ENTRY_SIZE = 32;
+        private static final int ENTRY_SIZE = 64;
         private static final int COUNT_OFFSET = 0;
         private static final int MIN_VALUE_OFFSET = 4;
         private static final int MAX_VALUE_OFFSET = 6;
         private static final int VALUE_SUM_OFFSET = 8;
-        private static final int KEY_SIZE_OFFSET = 12;
-        private static final int KEY_OFFSET = 16;
+        private static final int KEY_SIZE_OFFSET = 16;
+        private static final int KEY_OFFSET = 24;
 
         private static final int ENTRY_HASH_MASK = MAP_CAPACITY - 1;
         private static final int MAP_SIZE = ENTRY_SIZE * MAP_CAPACITY;
@@ -577,7 +577,6 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private long putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
-            keyLength = Math.min(16, keyLength);
             // Calculate hash of key
             int keyHash = calculateKeyHash(keyStartAddress, keyLength);
             // and get the position of the entry in the linear map based on calculated hash
@@ -692,7 +691,7 @@ public class CalculateAverage_serkan_ozal {
             }
 //            U.putShort(maxValuePtr, (short) Math.max(maxValue, value));
             long sumPtr = entryPtr + VALUE_SUM_OFFSET;
-            U.putInt(sumPtr, value + U.getInt(sumPtr));
+            U.putLong(sumPtr, value + U.getLong(sumPtr));
         }
 
         private void merge(Map<String, KeyResult> resultMap) {
