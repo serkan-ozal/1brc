@@ -532,7 +532,7 @@ public class CalculateAverage_serkan_ozal {
         // ================================
         // 128 bytes - total
 
-        private static final int ENTRY_SIZE = 128;
+        private static final int ENTRY_SIZE = 64;
         private static final int COUNT_OFFSET = 0;
         private static final int MIN_VALUE_OFFSET = 4;
         private static final int MAX_VALUE_OFFSET = 6;
