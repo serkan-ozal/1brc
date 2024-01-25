@@ -563,7 +563,8 @@ public class CalculateAverage_serkan_ozal {
                 x = U.getByte(address);
                 y = U.getByte(address + keyLength - Byte.BYTES);
             }
-            return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
+            return x ^ y;
+            //return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
         }
 
         private long putKey(long keyStartAddress, int keyLength, long word1, long word2) {
