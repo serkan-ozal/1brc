@@ -532,7 +532,7 @@ public class CalculateAverage_serkan_ozal {
         // ================================
         // 128 bytes - total
 
-        private static final int ENTRY_SIZE = 64;
+        private static final int ENTRY_SIZE = 128;
         private static final int COUNT_OFFSET = 0;
         private static final int MIN_VALUE_OFFSET = 4;
         private static final int MAX_VALUE_OFFSET = 6;
@@ -578,9 +578,9 @@ public class CalculateAverage_serkan_ozal {
             // and continue until find an available slot in case of hash collision
             // TODO Prevent infinite loop if all the slots are in use for other keys
             for (long entryPtr = dataAddress + (idx * ENTRY_SIZE);; entryPtr = (entryPtr + ENTRY_SIZE)) {
-                int keySize = U.getInt(entryPtr + KEY_SIZE_OFFSET);
+                long keyWord = U.getLong(entryPtr + KEY_OFFSET);
                 // Check whether current index is empty (no another key is inserted yet)
-                if (keySize == 0) {
+                if (keyWord == 0) {
                     // Initialize entry slot for new key
                     U.putShort(entryPtr + MIN_VALUE_OFFSET, Short.MAX_VALUE);
                     U.putShort(entryPtr + MAX_VALUE_OFFSET, Short.MIN_VALUE);
@@ -591,21 +591,21 @@ public class CalculateAverage_serkan_ozal {
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                if (keySize == keyLength && keysEqual(keyStartAddress, keyLength, entryPtr + KEY_OFFSET, word1, word2)) {
+                if (keysEqual(keyStartAddress, keyLength, entryPtr + KEY_OFFSET, word1, word2, keyWord)) {
                     return entryPtr;
                 }
             }
         }
 
         private boolean keysEqual(long keyStartAddress, int keyLength, long keyPtr,
-                                  long word1, long word2) {
+                                  long word1, long word2, long keyWord) {
             final int maxFastKeyCheckLength = 2 * Long.BYTES;
             final int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
 
             long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
             long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
 
-            long wordB1 = U.getLong(keyPtr);
+            long wordB1 = keyWord; //U.getLong(keyPtr);
             long wordB2 = U.getLong(keyPtr + Long.BYTES);
 
             int byteCount1 = Math.min(Long.BYTES, keyCheckLength);
