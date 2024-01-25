@@ -103,7 +103,7 @@ public class CalculateAverage_serkan_ozal {
 
         RandomAccessFile file = new RandomAccessFile(FILE, "r");
         FileChannel fc = file.getChannel();
-        Arena arena = USE_SHARED_ARENA ? Arena.ofShared() : null;
+        Arena arena = USE_SHARED_ARENA ? Arena.global() : null;
         try {
             long fileSize = fc.size();
             long regionSize = fileSize / regionCount;
@@ -113,7 +113,7 @@ public class CalculateAverage_serkan_ozal {
                     : Executors.newFixedThreadPool(concurrency, new RegionProcessorThreadFactory());
             MemorySegment region = null;
             if (USE_SHARED_REGION) {
-                arena = Arena.ofShared();
+                arena = Arena.global();
                 region = fc.map(FileChannel.MapMode.READ_ONLY, 0, fileSize, arena);
             }
             // Split whole file into regions and start region processors to handle those regions
@@ -538,7 +538,7 @@ public class CalculateAverage_serkan_ozal {
         private static final int MAX_VALUE_OFFSET = 6;
         private static final int VALUE_SUM_OFFSET = 8;
         private static final int KEY_SIZE_OFFSET = 16;
-        private static final int KEY_OFFSET = 20;
+        private static final int KEY_OFFSET = 24;
 
         private static final int ENTRY_HASH_MASK = MAP_CAPACITY - 1;
         private static final int MAP_SIZE = ENTRY_SIZE * MAP_CAPACITY;
