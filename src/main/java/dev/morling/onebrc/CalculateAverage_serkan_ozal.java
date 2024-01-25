@@ -618,13 +618,16 @@ public class CalculateAverage_serkan_ozal {
 //                                dataMemorySegment,
 //                                entryKeyPtr - dataAddress,
 //                                NATIVE_BYTE_ORDER);
-                // ByteVector entryKeyVector = ByteVector.from(BYTE_SPECIES, data, keyStartOffset - Unsafe.ARRAY_BYTE_BASE_OFFSET);
+                // ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartOffset - Unsafe.ARRAY_BYTE_BASE_OFFSET);
                 ByteVector entryKeyVector;
-                try (var arena = Arena.ofConfined()) {
-                    var segment = MemorySegment.ofAddress(entryKeyPtr)
-                            .reinterpret(BYTE_SPECIES.vectorByteSize(), arena, null);
-                    entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, ByteOrder.nativeOrder());
-                }
+//                try (var arena = Arena.ofConfined()) {
+//                    MemorySegment segment = MemorySegment.ofAddress(entryKeyPtr)
+//                            .reinterpret(BYTE_SPECIES.vectorByteSize(), arena, null);
+//                    entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
+//                }
+                MemorySegment segment = MemorySegment.ofAddress(entryKeyPtr)
+                        .reinterpret(BYTE_SPECIES.vectorByteSize(), Arena.ofConfined(), null);
+                entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
                 long eqMask = keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
                 int eqCount = Long.numberOfTrailingZeros(~eqMask);
                 if (eqCount >= keyCheckLength) {
