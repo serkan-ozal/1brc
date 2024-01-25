@@ -704,30 +704,30 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private void merge(Map<String, KeyResult> resultMap) {
-            long dataEndAddress = dataAddress + MAP_SIZE;
-            // Merge this local map into global result map
-            for (long entryPtr = dataAddress; entryPtr < dataEndAddress; entryPtr += ENTRY_SIZE) {
-                int keyLength = U.getInt(entryPtr + KEY_SIZE_OFFSET);
-                if (keyLength == 0) {
-                    // No entry is available for this index, so continue iterating
-                    continue;
-                }
-                byte[] keyBytes = new byte[keyLength];
-                U.copyMemory(null, entryPtr + KEY_OFFSET, keyBytes, Unsafe.ARRAY_BYTE_BASE_OFFSET, keyLength);
-                String key = new String(keyBytes, StandardCharsets.UTF_8);
-                int count = U.getInt(entryPtr+ COUNT_OFFSET);
-                short minValue = U.getShort(entryPtr + MIN_VALUE_OFFSET);
-                short maxValue = U.getShort(entryPtr + MAX_VALUE_OFFSET);
-                long sum = U.getLong(entryPtr + VALUE_SUM_OFFSET);
-                KeyResult result = new KeyResult(count, minValue, maxValue, sum);
-                KeyResult existingResult = resultMap.get(key);
-                if (existingResult == null) {
-                    resultMap.put(key, result);
-                }
-                else {
-                    existingResult.merge(result);
-                }
-            }
+//            long dataEndAddress = dataAddress + MAP_SIZE;
+//            // Merge this local map into global result map
+//            for (long entryPtr = dataAddress; entryPtr < dataEndAddress; entryPtr += ENTRY_SIZE) {
+//                int keyLength = U.getInt(entryPtr + KEY_SIZE_OFFSET);
+//                if (keyLength == 0) {
+//                    // No entry is available for this index, so continue iterating
+//                    continue;
+//                }
+//                byte[] keyBytes = new byte[keyLength];
+//                U.copyMemory(null, entryPtr + KEY_OFFSET, keyBytes, Unsafe.ARRAY_BYTE_BASE_OFFSET, keyLength);
+//                String key = new String(keyBytes, StandardCharsets.UTF_8);
+//                int count = U.getInt(entryPtr+ COUNT_OFFSET);
+//                short minValue = U.getShort(entryPtr + MIN_VALUE_OFFSET);
+//                short maxValue = U.getShort(entryPtr + MAX_VALUE_OFFSET);
+//                long sum = U.getLong(entryPtr + VALUE_SUM_OFFSET);
+//                KeyResult result = new KeyResult(count, minValue, maxValue, sum);
+//                KeyResult existingResult = resultMap.get(key);
+//                if (existingResult == null) {
+//                    resultMap.put(key, result);
+//                }
+//                else {
+//                    existingResult.merge(result);
+//                }
+//            }
         }
 
     }
