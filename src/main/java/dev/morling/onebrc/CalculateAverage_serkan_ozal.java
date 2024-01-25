@@ -69,10 +69,10 @@ public class CalculateAverage_serkan_ozal {
     private static final boolean USE_VTHREADS = getBooleanConfig("USE_VTHREADS", false);
     private static final int VTHREAD_COUNT = getIntegerConfig("VTHREAD_COUNT", 1024);
     private static final int REGION_COUNT = getIntegerConfig("REGION_COUNT", -1);
-    private static final boolean USE_SHARED_ARENA = getBooleanConfig("USE_SHARED_ARENA", false);
-    private static final boolean USE_SHARED_REGION = getBooleanConfig("USE_SHARED_REGION", false);
+    private static final boolean USE_SHARED_ARENA = getBooleanConfig("USE_SHARED_ARENA", true);
+    private static final boolean USE_SHARED_REGION = getBooleanConfig("USE_SHARED_REGION", true);
     private static final int MAP_CAPACITY = getIntegerConfig("MAP_CAPACITY", 1 << 17);
-    private static final boolean CLOSE_STDOUT_ON_RESULT = getBooleanConfig("CLOSE_STDOUT_ON_RESULT", false);
+    private static final boolean CLOSE_STDOUT_ON_RESULT = getBooleanConfig("CLOSE_STDOUT_ON_RESULT", true);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // My dear old friend Unsafe
