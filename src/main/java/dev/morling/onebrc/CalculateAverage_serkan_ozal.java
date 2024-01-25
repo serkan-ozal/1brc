@@ -156,7 +156,7 @@ public class CalculateAverage_serkan_ozal {
         finally {
             // Close memory arena if it is managed globally here (shared arena)
             if (arena != null) {
-                arena.close();
+//                arena.close();
             }
             fc.close();
             if (VERBOSE) {
