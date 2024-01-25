@@ -325,18 +325,18 @@ public class CalculateAverage_serkan_ozal {
                 regionPtr = doProcessLine(regionPtr);
             }
 
-            // Read and process region - tail
-            for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
-                byte b = U.getByte(i);
-                if (b == KEY_VALUE_SEPARATOR) {
-                    long baseOffset = map.putKey(j, (int) (i - j), 0, 0);
-                    i = extractValue(i + 1, map, baseOffset);
-                    j = i;
-                }
-                else {
-                    i++;
-                }
-            }
+//            // Read and process region - tail
+//            for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
+//                byte b = U.getByte(i);
+//                if (b == KEY_VALUE_SEPARATOR) {
+//                    long baseOffset = map.putKey(j, (int) (i - j), 0, 0);
+//                    i = extractValue(i + 1, map, baseOffset);
+//                    j = i;
+//                }
+//                else {
+//                    i++;
+//                }
+//            }
         }
 
         private long doProcessLine(long regionPtr) {
@@ -563,8 +563,7 @@ public class CalculateAverage_serkan_ozal {
                 x = U.getByte(address);
                 y = U.getByte(address + keyLength - Byte.BYTES);
             }
-            return x ^ y;
-            //return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
+            return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
         }
 
         private long putKey(long keyStartAddress, int keyLength, long word1, long word2) {
