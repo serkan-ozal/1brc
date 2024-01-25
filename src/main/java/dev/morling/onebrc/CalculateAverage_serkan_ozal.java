@@ -549,6 +549,7 @@ public class CalculateAverage_serkan_ozal {
 
         private final long allocatedAddress;
         private final long dataAddress;
+        private final Arena keyCheckArena = Arena.ofConfined();
 //        private final Arena dataArena;
 //        private final MemorySegment dataMemorySegment;
 
@@ -620,14 +621,13 @@ public class CalculateAverage_serkan_ozal {
 //                                NATIVE_BYTE_ORDER);
                 // ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartOffset - Unsafe.ARRAY_BYTE_BASE_OFFSET);
                 ByteVector entryKeyVector;
-                try (Arena arena = Arena.ofConfined()) {
-                    MemorySegment segment = MemorySegment.ofAddress(entryKeyPtr)
-                            .reinterpret(BYTE_SPECIES_SIZE, arena, null);
-                    entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
-                }
-//                MemorySegment segment = MemorySegment.ofAddress(entryKeyPtr)
-//                        .reinterpret(BYTE_SPECIES_SIZE, Arena.ofConfined(), null);
-//                entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
+//                try (Arena arena = Arena.ofConfined()) {
+//                    MemorySegment segment = MemorySegment.ofAddress(entryKeyPtr)
+//                            .reinterpret(BYTE_SPECIES_SIZE, arena, null);
+//                    entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
+//                }
+                MemorySegment segment = MemorySegment.ofAddress(entryKeyPtr).reinterpret(BYTE_SPECIES_SIZE, keyCheckArena, null);
+                entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
                 long eqMask = keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
                 int eqCount = Long.numberOfTrailingZeros(~eqMask);
                 if (eqCount >= keyCheckLength) {
