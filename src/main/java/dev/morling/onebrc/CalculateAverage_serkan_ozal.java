@@ -590,8 +590,8 @@ public class CalculateAverage_serkan_ozal {
                 if (keySize != keyLength) {
                     continue;
                 }
-                long key1 = U.getLong(data, baseOffset + KEY_OFFSET);
-                long key2 = U.getLong(data, baseOffset + KEY_OFFSET + 8);
+                long key1 = U.getLong(data, keyStartOffset);
+                long key2 = U.getLong(data, keyStartOffset + 8);
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
@@ -609,8 +609,8 @@ public class CalculateAverage_serkan_ozal {
             long wordA1 = word1 != 0 ? word1 : U.getLong(keyStartAddress);
             long wordA2 = word2 != 0 ? word2 : U.getLong(keyStartAddress + Long.BYTES);
 
-            long wordB1 = key1; //U.getLong(data, keyStartOffset);
-            long wordB2 = key2; //U.getLong(data, keyStartOffset + Long.BYTES);
+//            long wordB1 = U.getLong(data, keyStartOffset);
+//            long wordB2 = U.getLong(data, keyStartOffset + Long.BYTES);
 
             int byteCount1 = Math.min(Long.BYTES, keyCheckLength);
             int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
@@ -625,7 +625,7 @@ public class CalculateAverage_serkan_ozal {
             wordA2 = wordA2 & mask2;
 
             if (keyCheckLength == keyLength) {
-                return wordA1 == wordB1 && wordA2 == wordB2;
+                return wordA1 == key1 && wordA2 == key2;
             }
 
             // Compare remaining parts of the keys
