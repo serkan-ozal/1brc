@@ -355,13 +355,13 @@ public class CalculateAverage_serkan_ozal {
             long keyStartPtr = regionPtr;
 
             // Vectorized search for key/value separator
-            ByteVector keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, region, regionPtr - regionAddress, NATIVE_BYTE_ORDER);
-//            ByteVector keyVector;
-//            try (Arena arena = Arena.ofConfined()) {
-//                MemorySegment segment = MemorySegment.ofAddress(regionPtr)
-//                        .reinterpret(BYTE_SPECIES_SIZE, arena, null);
-//                keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
-//            }
+            //ByteVector keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, region, regionPtr - regionAddress, NATIVE_BYTE_ORDER);
+            ByteVector keyVector;
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment segment = MemorySegment.ofAddress(regionPtr)
+                        .reinterpret(BYTE_SPECIES_SIZE, arena, null);
+                keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
+            }
             int keyValueSepOffset = keyVector.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
             // Check whether key/value separator is found in the first vector (city name is <= vector size)
             if (keyValueSepOffset == vectorSize) {
