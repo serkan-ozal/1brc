@@ -332,21 +332,54 @@ public class CalculateAverage_serkan_ozal {
 
             // Read and process region - main
             for (regionPtr = regionStart; regionPtr < regionMainLimit;) {
-                regionPtr = doProcessLine(region, regionAddress, regionPtr, vectorSize);
+                // Find key/value separator
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                long keyStartPtr = regionPtr;
+
+                // Vectorized search for key/value separator
+                //ByteVector keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, region, regionPtr - regionAddress, NATIVE_BYTE_ORDER);
+                ByteVector keyVector;
+                try (Arena arena = Arena.ofConfined()) {
+                    MemorySegment segment = MemorySegment.ofAddress(regionPtr)
+                            .reinterpret(BYTE_SPECIES_SIZE, arena, null);
+                    keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
+                }
+                int keyValueSepOffset = keyVector.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
+                // Check whether key/value separator is found in the first vector (city name is <= vector size)
+                if (keyValueSepOffset == vectorSize) {
+                    regionPtr += vectorSize;
+                    keyValueSepOffset = 0;
+                    for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
+                        ;
+                    // I have tried vectorized search for key/value separator in the remaining part,
+                    // but since majority (99%) of the city names <= 16 bytes
+                    // and other a few longer city names (have length < 16 and <= 32) not close to 32 bytes,
+                    // byte by byte search is better in terms of performance (according to my experiments) and simplicity.
+                }
+                regionPtr += keyValueSepOffset;
+                int keyLength = (int) (regionPtr - keyStartPtr);
+                regionPtr++;
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                // Put key and get map offset to put value
+                long entryPtr = map.putKey(keyVector, keyStartPtr, keyLength);
+
+                // Extract value, put it into map and return next position in the region to continue processing from there
+                regionPtr = extractValue(regionPtr, map, entryPtr);
             }
 
-//            // Read and process region - tail
-//            for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
-//                byte b = U.getByte(i);
-//                if (b == KEY_VALUE_SEPARATOR) {
-//                    long baseOffset = map.putKey(null, j, (int) (i - j));
-//                    i = extractValue(i + 1, map, baseOffset);
-//                    j = i;
-//                }
-//                else {
-//                    i++;
-//                }
-//            }
+            // Read and process region - tail
+            for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
+                byte b = U.getByte(i);
+                if (b == KEY_VALUE_SEPARATOR) {
+                    long baseOffset = map.putKey(null, j, (int) (i - j));
+                    i = extractValue(i + 1, map, baseOffset);
+                    j = i;
+                }
+                else {
+                    i++;
+                }
+            }
         }
 
         private long doProcessLine(MemorySegment region, long regionAddress, long regionPtr, int vectorSize) {
