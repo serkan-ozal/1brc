@@ -326,69 +326,19 @@ public class CalculateAverage_serkan_ozal {
 
         private void doProcessRegion(MemorySegment region, long regionAddress, long regionStart, long regionEnd) {
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
-            final long regionMainLimit = regionEnd - MAX_LINE_LENGTH;
 
-            long regionPtr;
-
-            // Read and process region - main
-            for (regionPtr = regionStart; regionPtr < regionMainLimit;) {
-                // Find key/value separator
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                long keyStartPtr = regionPtr;
-
-                // Vectorized search for key/value separator
-                //ByteVector keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, region, regionPtr - regionAddress, NATIVE_BYTE_ORDER);
-                ByteVector keyVector;
-                try (Arena arena = Arena.ofConfined()) {
-                    MemorySegment segment = MemorySegment.ofAddress(regionPtr)
-                            .reinterpret(BYTE_SPECIES_SIZE, arena, null);
-                    keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
-                }
-                int keyValueSepOffset = keyVector.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-                // Check whether key/value separator is found in the first vector (city name is <= vector size)
-                if (keyValueSepOffset == vectorSize) {
-                    regionPtr += vectorSize;
-                    keyValueSepOffset = 0;
-                    for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
-                        ;
-                    // I have tried vectorized search for key/value separator in the remaining part,
-                    // but since majority (99%) of the city names <= 16 bytes
-                    // and other a few longer city names (have length < 16 and <= 32) not close to 32 bytes,
-                    // byte by byte search is better in terms of performance (according to my experiments) and simplicity.
-                }
-                regionPtr += keyValueSepOffset;
-                int keyLength = (int) (regionPtr - keyStartPtr);
-                regionPtr++;
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-                // Put key and get map offset to put value
-                long entryPtr = map.putKey(keyVector, keyStartPtr, keyLength);
-
-                // Extract value, put it into map and return next position in the region to continue processing from there
-                regionPtr = extractValue(regionPtr, map, entryPtr);
-            }
-
-            // Read and process region - tail
-            for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
-                byte b = U.getByte(i);
-                if (b == KEY_VALUE_SEPARATOR) {
-                    long baseOffset = map.putKey(null, j, (int) (i - j));
-                    i = extractValue(i + 1, map, baseOffset);
-                    j = i;
-                }
-                else {
-                    i++;
-                }
+            // Read and process region
+            for (long regionPtr = regionStart; regionPtr < regionEnd;) {
+                regionPtr = doProcessLine(regionPtr, vectorSize);
             }
         }
 
-        private long doProcessLine(MemorySegment region, long regionAddress, long regionPtr, int vectorSize) {
+        private long doProcessLine(long regionPtr, int vectorSize) {
             // Find key/value separator
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
             long keyStartPtr = regionPtr;
 
             // Vectorized search for key/value separator
-            //ByteVector keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, region, regionPtr - regionAddress, NATIVE_BYTE_ORDER);
             ByteVector keyVector;
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment segment = MemorySegment.ofAddress(regionPtr)
@@ -588,17 +538,10 @@ public class CalculateAverage_serkan_ozal {
 
         private final long allocatedAddress;
         private final long dataAddress;
-//        private final Arena keyCheckArena = Arena.ofConfined();
-//        private final Arena dataArena;
-//        private final MemorySegment dataMemorySegment;
 
         private OpenMap() {
             this.allocatedAddress = U.allocateMemory(MAP_SIZE + 4096);
             this.dataAddress = (this.allocatedAddress + 4095) & (~4095);
-//            U.setMemory(this.dataAddress, MAP_SIZE, (byte) 0);
-//            this.dataArena = Arena.ofConfined();
-//            this.dataMemorySegment = MemorySegment.ofAddress(dataAddress)
-//                    .reinterpret(MAP_SIZE, this.dataArena, null);
         }
 
         // Credits: merykitty
@@ -647,83 +590,29 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, long entryKeyPtr) {
-            int keyCheckIdx = 0;
-            if (keyVector != null) {
-                // Use vectorized search for the comparison of keys.
-                // Since majority of the city names >= 8 bytes and <= 16 bytes,
-                // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
-                int keyCheckLength = Math.min(BYTE_SPECIES_SIZE, keyLength);
-//                ByteVector entryKeyVector =
-//                        ByteVector.fromMemorySegment(
-//                                BYTE_SPECIES,
-//                                dataMemorySegment,
-//                                entryKeyPtr - dataAddress,
-//                                NATIVE_BYTE_ORDER);
-                // ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartOffset - Unsafe.ARRAY_BYTE_BASE_OFFSET);
-                ByteVector entryKeyVector;
-                try (Arena arena = Arena.ofConfined()) {
-                    MemorySegment segment = MemorySegment.ofAddress(entryKeyPtr)
-                            .reinterpret(BYTE_SPECIES_SIZE, arena, null);
-                    entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
-                }
-//                MemorySegment segment = MemorySegment.ofAddress(entryKeyPtr)
-//                        .reinterpret(BYTE_SPECIES_SIZE, keyCheckArena, null);
-//                entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
-                long eqMask = keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
-                int eqCount = Long.numberOfTrailingZeros(~eqMask);
-                if (eqCount >= keyCheckLength) {
-                    return true;
-                }
-                keyCheckIdx = BYTE_SPECIES_SIZE;
+            // Use vectorized search for the comparison of keys.
+            // Since majority of the city names >= 8 bytes and <= 16 bytes,
+            // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
+            int keyCheckLength = Math.min(BYTE_SPECIES_SIZE, keyLength);
+            ByteVector entryKeyVector;
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment segment =
+                        MemorySegment
+                                .ofAddress(entryKeyPtr)
+                                .reinterpret(BYTE_SPECIES_SIZE, arena, null);
+                entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
             }
-
-//            final int maxFastKeyCheckLength = 2 * Long.BYTES;
-//            final int keyCheckLength = Math.min(maxFastKeyCheckLength, keyLength);
-//
-//            long wordA1 = U.getLong(keyStartAddress);
-//            long wordA2 = U.getLong(keyStartAddress + Long.BYTES);
-//
-//            long wordB1 = U.getLong(entryKeyPtr);
-//            long wordB2 = U.getLong(entryKeyPtr + Long.BYTES);
-//
-//            int byteCount1 = Math.min(Long.BYTES, keyCheckLength);
-//            int byteCount2 = Math.max(0, keyCheckLength - Long.BYTES);
-//
-//            int shift1 = (Long.BYTES - byteCount1) << 3;
-//            long mask1 = 0xFFFFFFFFFFFFFFFFL >>> shift1;
-//
-//            int halfShift2 = (Long.BYTES - byteCount2) << 2;
-//            long mask2 = (0xFFFFFFFFFFFFFFFFL >>> halfShift2) >> halfShift2;
-//
-//            wordA1 = wordA1 & mask1;
-//            wordA2 = wordA2 & mask2;
-//
-//            if (keyCheckLength == keyLength) {
-//                return wordA1 == wordB1 && wordA2 == wordB2;
-//            }
-
-//            if (keyLength <= 16) {
-//                int word1CheckLength = Math.min(8, keyLength);
-//                int shift = (8 - word1CheckLength) << 3;
-//                long word2Offset = Math.max(0, keyLength - 8);
-//
-//                long wordA1 = U.getLong(keyStartAddress);
-//                long wordA2 = U.getLong(keyStartAddress + word2Offset);
-//
-//                long wordB1 = U.getLong(entryKeyPtr);
-//                long wordB2 = U.getLong(entryKeyPtr + word2Offset);
-//
-//                wordA1 = (wordA1 << shift) >>> shift;
-//                wordA2 = (wordA2 << shift) >>> shift;
-//
-//                return wordA1 == wordB1 && wordA2 == wordB2;
-//            }
+            long eqMask = keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
+            int eqCount = Long.numberOfTrailingZeros(~eqMask);
+            if (eqCount >= keyCheckLength) {
+                return true;
+            }
 
             // Compare remaining parts of the keys
 
             int alignedKeyLength = keyLength & 0xFFFFFFF8;
             int i;
-            for (i = keyCheckIdx; i < alignedKeyLength; i += Long.BYTES) {
+            for (i = BYTE_SPECIES_SIZE; i < alignedKeyLength; i += Long.BYTES) {
                 if (U.getLong(keyStartAddress + i) != U.getLong(entryKeyPtr + i)) {
                     return false;
                 }
