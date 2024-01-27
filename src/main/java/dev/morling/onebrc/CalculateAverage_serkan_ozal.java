@@ -714,29 +714,29 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, long entryKeyPtr) {
-            // Use vectorized search for the comparison of keys.
-            // Since majority of the city names >= 8 bytes and <= 16 bytes,
-            // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
-            int keyCheckLength = Math.min(BYTE_SPECIES_SIZE, keyLength);
-            ByteVector entryKeyVector;
-            try (Arena arena = Arena.ofConfined()) {
-                MemorySegment segment =
-                        MemorySegment
-                                .ofAddress(entryKeyPtr)
-                                .reinterpret(BYTE_SPECIES_SIZE, arena, null);
-                entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
-            }
-            long eqMask = keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
-            int eqCount = Long.numberOfTrailingZeros(~eqMask);
-            if (eqCount >= keyCheckLength) {
-                return true;
-            }
+//            // Use vectorized search for the comparison of keys.
+//            // Since majority of the city names >= 8 bytes and <= 16 bytes,
+//            // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
+//            int keyCheckLength = Math.min(BYTE_SPECIES_SIZE, keyLength);
+//            ByteVector entryKeyVector;
+//            try (Arena arena = Arena.ofConfined()) {
+//                MemorySegment segment =
+//                        MemorySegment
+//                                .ofAddress(entryKeyPtr)
+//                                .reinterpret(BYTE_SPECIES_SIZE, arena, null);
+//                entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
+//            }
+//            long eqMask = keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
+//            int eqCount = Long.numberOfTrailingZeros(~eqMask);
+//            if (eqCount >= keyCheckLength) {
+//                return true;
+//            }
 
             // Compare remaining parts of the keys
 
             int alignedKeyLength = keyLength & 0xFFFFFFF8;
             int i;
-            for (i = BYTE_SPECIES_SIZE; i < alignedKeyLength; i += Long.BYTES) {
+            for (i = 0; i < alignedKeyLength; i += Long.BYTES) {
                 if (U.getLong(keyStartAddress + i) != U.getLong(entryKeyPtr + i)) {
                     return false;
                 }
