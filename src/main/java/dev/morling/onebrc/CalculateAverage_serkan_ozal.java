@@ -325,7 +325,7 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private long findClosestLineEnd(long endPos) {
-            int i = 1;
+            int i = 0;
             while (i < MAX_LINE_LENGTH && U.getByte(endPos - i) != NEW_LINE_SEPARATOR) {
                 i++;
             }
@@ -348,7 +348,7 @@ public class CalculateAverage_serkan_ozal {
             long regionStartD = regionEndC;
             long regionEndD = regionEnd;
 
-            System.out.println(Thread.currentThread().getName() + " > Region start: " + regionStart + ", region end: " + regionEnd);
+            System.out.println(Thread.currentThread().getName() + " > Region  start: " + regionStart  + ", region  end: " + regionEnd);
             System.out.println(Thread.currentThread().getName() + " > RegionA start: " + regionStartA + ", regionA end: " + regionEndA);
             System.out.println(Thread.currentThread().getName() + " > RegionB start: " + regionStartB + ", regionB end: " + regionEndB);
             System.out.println(Thread.currentThread().getName() + " > RegionC start: " + regionStartC + ", regionC end: " + regionEndC);
