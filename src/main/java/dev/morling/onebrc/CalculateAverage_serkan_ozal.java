@@ -349,8 +349,8 @@ public class CalculateAverage_serkan_ozal {
 
         private void doProcessRegionWithILP(long regionStart, long regionEnd) {
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
-            final long segmentSize = size / 2;
-
+//            final long segmentSize = size / 4;
+//
 //            final long regionStartA = regionStart;
 //            final long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
 //
@@ -388,19 +388,24 @@ public class CalculateAverage_serkan_ozal {
 //                regionPtrD = doProcessLine(regionPtrD, vectorSize);
 //            }
 
+            final long segmentSize = size / 3;
             long regionStartA = regionStart;
             long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
 
-            long regionStartB = regionEndA;
-            long regionEndB = regionEnd;
+            final long regionStartB = regionEndA;
+            final long regionEndB = findClosestLineEnd(regionStartB + segmentSize);
 
-            long regionPtrA, regionPtrB;
+            final long regionStartC = regionEndB;
+            final long regionEndC = regionEnd;
+
+            long regionPtrA, regionPtrB, regionPtrC;
 
             // Read and process region - main
-            for (regionPtrA = regionStartA, regionPtrB = regionStartB;
-                 regionPtrA < regionEndA && regionPtrB < regionEndB;) {
+            for (regionPtrA = regionStartA, regionPtrB = regionStartB, regionPtrC = regionStartC;
+                 regionPtrA < regionEndA && regionPtrB < regionEndB && regionPtrC < regionEndC;) {
                 regionPtrA = doProcessLine(regionPtrA, vectorSize);
                 regionPtrB = doProcessLine(regionPtrB, vectorSize);
+                regionPtrC = doProcessLine(regionPtrC, vectorSize);
             }
 
             // Read and process region - tail
@@ -410,6 +415,33 @@ public class CalculateAverage_serkan_ozal {
             while (regionPtrB < regionEndB) {
                 regionPtrB = doProcessLine(regionPtrB, vectorSize);
             }
+            while (regionPtrC < regionEndC) {
+                regionPtrC = doProcessLine(regionPtrC, vectorSize);
+            }
+
+//            final long segmentSize = size / 2;
+//            long regionStartA = regionStart;
+//            long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
+//
+//            long regionStartB = regionEndA;
+//            long regionEndB = regionEnd;
+//
+//            long regionPtrA, regionPtrB;
+//
+//            // Read and process region - main
+//            for (regionPtrA = regionStartA, regionPtrB = regionStartB;
+//                 regionPtrA < regionEndA && regionPtrB < regionEndB;) {
+//                regionPtrA = doProcessLine(regionPtrA, vectorSize);
+//                regionPtrB = doProcessLine(regionPtrB, vectorSize);
+//            }
+//
+//            // Read and process region - tail
+//            while (regionPtrA < regionEndA) {
+//                regionPtrA = doProcessLine(regionPtrA, vectorSize);
+//            }
+//            while (regionPtrB < regionEndB) {
+//                regionPtrB = doProcessLine(regionPtrB, vectorSize);
+//            }
         }
 
         private long doProcessLine(long regionPtr, int vectorSize) {

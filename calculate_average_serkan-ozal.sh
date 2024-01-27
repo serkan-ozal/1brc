@@ -23,7 +23,7 @@ if [[ ! "$(uname -s)" = "Darwin" ]]; then
   JAVA_OPTS="$JAVA_OPTS -XX:+UseTransparentHugePages"
 fi
 
-CONFIGS="CLOSE_STDOUT_ON_RESULT=true USE_SHARED_ARENA=true USE_SHARED_REGION=true USE_ILP=false"
+CONFIGS="CLOSE_STDOUT_ON_RESULT=true USE_SHARED_ARENA=true USE_SHARED_REGION=true USE_ILP=true"
 
 # TODO Generate/Get a random and available file descriptor number?
 fd=1234
