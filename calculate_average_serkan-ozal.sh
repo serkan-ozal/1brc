@@ -31,5 +31,5 @@ fd=1234
 #eval "exec $fd< <({ $CONFIGS java $JAVA_OPTS --class-path target/average-1.0.0-SNAPSHOT.jar dev.morling.onebrc.CalculateAverage_serkan_ozal; })"
 #read <&$fd result
 #echo -e "$result"
-$CONFIGS java $JAVA_OPTS --class-path target/average-1.0.0-SNAPSHOT.jar dev.morling.onebrc.CalculateAverage_serkan_ozal;
+CLOSE_STDOUT_ON_RESULT=false USE_SHARED_ARENA=true USE_SHARED_REGION=true java $JAVA_OPTS --class-path target/average-1.0.0-SNAPSHOT.jar dev.morling.onebrc.CalculateAverage_serkan_ozal;
 #echo "Process finished at $(date +%s%N | cut -b1-13)"

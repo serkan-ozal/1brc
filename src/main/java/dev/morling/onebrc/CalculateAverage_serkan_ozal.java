@@ -348,11 +348,11 @@ public class CalculateAverage_serkan_ozal {
             long regionStartD = regionEndC;
             long regionEndD = regionEnd;
 
-            System.out.println("Region start: " + regionStart + ", region end: " + regionEnd);
-            System.out.println("RegionA start: " + regionStartA + ", regionA end: " + regionEndA);
-            System.out.println("RegionB start: " + regionStartB + ", regionB end: " + regionEndB);
-            System.out.println("RegionC start: " + regionStartC + ", regionC end: " + regionEndC);
-            System.out.println("RegionD start: " + regionStartD + ", regionD end: " + regionEndD);
+            System.out.println(Thread.currentThread().getName() + " > Region start: " + regionStart + ", region end: " + regionEnd);
+            System.out.println(Thread.currentThread().getName() + " > RegionA start: " + regionStartA + ", regionA end: " + regionEndA);
+            System.out.println(Thread.currentThread().getName() + " > RegionB start: " + regionStartB + ", regionB end: " + regionEndB);
+            System.out.println(Thread.currentThread().getName() + " > RegionC start: " + regionStartC + ", regionC end: " + regionEndC);
+            System.out.println(Thread.currentThread().getName() + " > RegionD start: " + regionStartD + ", regionD end: " + regionEndD);
 
             // Read and process region
             for (long regionPtrA = regionStartA, regionPtrB = regionStartB, regionPtrC = regionStartC, regionPtrD = regionStartD;
