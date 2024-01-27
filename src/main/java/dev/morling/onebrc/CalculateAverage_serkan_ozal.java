@@ -262,9 +262,9 @@ public class CalculateAverage_serkan_ozal {
             try {
                 processRegion();
                 return new Response(map);
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw e;
+            } catch (Throwable t) {
+                t.printStackTrace();
+                throw t;
             } finally {
                 if (VERBOSE) {
                     System.out.println("[Processor-" + Thread.currentThread().getName() + "] Processing finished at " + System.currentTimeMillis());
