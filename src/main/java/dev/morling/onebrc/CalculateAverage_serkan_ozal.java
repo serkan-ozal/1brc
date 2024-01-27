@@ -20,6 +20,7 @@ import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 import sun.misc.Unsafe;
 
+import javax.print.attribute.standard.MediaSize;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.foreign.Arena;
@@ -286,9 +287,9 @@ public class CalculateAverage_serkan_ozal {
                 long regionEnd = regionStart + size;
 
                 if (USE_ILP) {
-                    doProcessRegionWithILP(regionStart, regionEnd);
+                    doProcessRegionWithILP(r, regionStart, regionEnd);
                 } else {
-                    doProcessRegion(regionStart, regionEnd);
+                    doProcessRegion(r, regionStart, regionEnd);
                 }
 
                 if (VERBOSE) {
@@ -340,7 +341,7 @@ public class CalculateAverage_serkan_ozal {
             return endPos - i + 1;
         }
 
-        private void doProcessRegion(long regionStart, long regionEnd) {
+        private void doProcessRegion(MemorySegment region, long regionStart, long regionEnd) {
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
 
             // Read and process region
@@ -349,7 +350,7 @@ public class CalculateAverage_serkan_ozal {
             }
         }
 
-        private void doProcessRegionWithILP(long regionStart, long regionEnd) {
+        private void doProcessRegionWithILP(MemorySegment region, long regionStart, long regionEnd) {
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
 //            final long segmentSize = size / 4;
 //
@@ -390,6 +391,7 @@ public class CalculateAverage_serkan_ozal {
 //                regionPtrD = doProcessLine(regionPtrD, vectorSize);
 //            }
 
+            final long regionAddress = region.address();
             final long segmentSize = size / 2;
             long regionStartA = regionStart;
             long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
@@ -403,12 +405,13 @@ public class CalculateAverage_serkan_ozal {
             for (regionPtrA = regionStartA, regionPtrB = regionStartB;
                  regionPtrA < regionEndA && regionPtrB < regionEndB;) {
                 long keyStartPtr1 = regionPtrA;
-                ByteVector keyVector1;
-                try (Arena arena = Arena.ofConfined()) {
-                    MemorySegment segment = MemorySegment.ofAddress(regionPtrA)
-                            .reinterpret(BYTE_SPECIES_SIZE, arena, null);
-                    keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
-                }
+                ByteVector keyVector1 =
+                        ByteVector.fromMemorySegment(BYTE_SPECIES, region, keyStartPtr1 - regionAddress, NATIVE_BYTE_ORDER);
+//                try (Arena arena = Arena.ofConfined()) {
+//                    MemorySegment segment = MemorySegment.ofAddress(regionPtrA)
+//                            .reinterpret(BYTE_SPECIES_SIZE, arena, null);
+//                    keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
+//                }
                 int keyValueSepOffset1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
                 if (keyValueSepOffset1 == vectorSize) {
                     regionPtrA += vectorSize;
@@ -423,12 +426,13 @@ public class CalculateAverage_serkan_ozal {
                 regionPtrA =  extractValue(regionPtrA, map, entryPtr1);
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
                 long keyStartPtr2 = regionPtrB;
-                ByteVector keyVector2;
-                try (Arena arena = Arena.ofConfined()) {
-                    MemorySegment segment = MemorySegment.ofAddress(regionPtrB)
-                            .reinterpret(BYTE_SPECIES_SIZE, arena, null);
-                    keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
-                }
+                ByteVector keyVector2 =
+                        ByteVector.fromMemorySegment(BYTE_SPECIES, region, keyStartPtr2 - regionAddress, NATIVE_BYTE_ORDER);
+//                try (Arena arena = Arena.ofConfined()) {
+//                    MemorySegment segment = MemorySegment.ofAddress(regionPtrB)
+//                            .reinterpret(BYTE_SPECIES_SIZE, arena, null);
+//                    keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, segment, 0, NATIVE_BYTE_ORDER);
+//                }
                 int keyValueSepOffset2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
                 // Check whether key/value separator is found in the first vector (city name is <= vector size)
                 if (keyValueSepOffset2 == vectorSize) {
@@ -445,12 +449,12 @@ public class CalculateAverage_serkan_ozal {
             }
 
             // Read and process region - tail
-//            while (regionPtrA < regionEndA) {
-//                regionPtrA = doProcessLine(regionPtrA, vectorSize);
-//            }
-//            while (regionPtrB < regionEndB) {
-//                regionPtrB = doProcessLine(regionPtrB, vectorSize);
-//            }
+            while (regionPtrA < regionEndA) {
+                regionPtrA = doProcessLine(regionPtrA, vectorSize);
+            }
+            while (regionPtrB < regionEndB) {
+                regionPtrB = doProcessLine(regionPtrB, vectorSize);
+            }
         }
 
         private long doProcessLine(long regionPtr, int vectorSize) {
@@ -771,30 +775,30 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private void merge(Map<String, KeyResult> resultMap) {
-//            long dataEndAddress = dataAddress + MAP_SIZE;
-//            // Merge this local map into global result map
-//            for (long entryPtr = dataAddress; entryPtr < dataEndAddress; entryPtr += ENTRY_SIZE) {
-//                int keyLength = U.getInt(entryPtr + KEY_SIZE_OFFSET);
-//                if (keyLength == 0) {
-//                    // No entry is available for this index, so continue iterating
-//                    continue;
-//                }
-//                byte[] keyBytes = new byte[keyLength];
-//                U.copyMemory(null, entryPtr + KEY_OFFSET, keyBytes, Unsafe.ARRAY_BYTE_BASE_OFFSET, keyLength);
-//                String key = new String(keyBytes, StandardCharsets.UTF_8);
-//                int count = U.getInt(entryPtr+ COUNT_OFFSET);
-//                short minValue = U.getShort(entryPtr + MIN_VALUE_OFFSET);
-//                short maxValue = U.getShort(entryPtr + MAX_VALUE_OFFSET);
-//                long sum = U.getLong(entryPtr + VALUE_SUM_OFFSET);
-//                KeyResult result = new KeyResult(count, minValue, maxValue, sum);
-//                KeyResult existingResult = resultMap.get(key);
-//                if (existingResult == null) {
-//                    resultMap.put(key, result);
-//                }
-//                else {
-//                    existingResult.merge(result);
-//                }
-//            }
+            long dataEndAddress = dataAddress + MAP_SIZE;
+            // Merge this local map into global result map
+            for (long entryPtr = dataAddress; entryPtr < dataEndAddress; entryPtr += ENTRY_SIZE) {
+                int keyLength = U.getInt(entryPtr + KEY_SIZE_OFFSET);
+                if (keyLength == 0) {
+                    // No entry is available for this index, so continue iterating
+                    continue;
+                }
+                byte[] keyBytes = new byte[keyLength];
+                U.copyMemory(null, entryPtr + KEY_OFFSET, keyBytes, Unsafe.ARRAY_BYTE_BASE_OFFSET, keyLength);
+                String key = new String(keyBytes, StandardCharsets.UTF_8);
+                int count = U.getInt(entryPtr+ COUNT_OFFSET);
+                short minValue = U.getShort(entryPtr + MIN_VALUE_OFFSET);
+                short maxValue = U.getShort(entryPtr + MAX_VALUE_OFFSET);
+                long sum = U.getLong(entryPtr + VALUE_SUM_OFFSET);
+                KeyResult result = new KeyResult(count, minValue, maxValue, sum);
+                KeyResult existingResult = resultMap.get(key);
+                if (existingResult == null) {
+                    resultMap.put(key, result);
+                }
+                else {
+                    existingResult.merge(result);
+                }
+            }
         }
 
     }
