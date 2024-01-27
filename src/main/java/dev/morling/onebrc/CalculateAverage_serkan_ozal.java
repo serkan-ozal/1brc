@@ -329,7 +329,7 @@ public class CalculateAverage_serkan_ozal {
             while (i < MAX_LINE_LENGTH && U.getByte(endPos - i) != NEW_LINE_SEPARATOR) {
                 i++;
             }
-            return endPos - i;
+            return endPos - i + 1;
         }
 
         private void doProcessRegion(long regionStart, long regionEnd) {
