@@ -336,31 +336,44 @@ public class CalculateAverage_serkan_ozal {
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
             final long segmentSize = size / 4;
 
+//            long regionStartA = regionStart;
+//            long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
+//
+//            long regionStartB = regionEndA;
+//            long regionEndB = findClosestLineEnd(regionStartB + segmentSize);
+//
+//            long regionStartC = regionEndB;
+//            long regionEndC = findClosestLineEnd(regionStartC + segmentSize);
+//
+//            long regionStartD = regionEndC;
+//            long regionEndD = regionEnd;
+//
+//            System.out.println(Thread.currentThread().getName() + " > Region  start: " + regionStart  + ", region  end: " + regionEnd);
+//            System.out.println(Thread.currentThread().getName() + " > RegionA start: " + regionStartA + ", regionA end: " + regionEndA);
+//            System.out.println(Thread.currentThread().getName() + " > RegionB start: " + regionStartB + ", regionB end: " + regionEndB);
+//            System.out.println(Thread.currentThread().getName() + " > RegionC start: " + regionStartC + ", regionC end: " + regionEndC);
+//            System.out.println(Thread.currentThread().getName() + " > RegionD start: " + regionStartD + ", regionD end: " + regionEndD);
+//
+//            // Read and process region
+//            for (long regionPtrA = regionStartA, regionPtrB = regionStartB, regionPtrC = regionStartC, regionPtrD = regionStartD;
+//                 regionPtrA < regionEndA && regionPtrB < regionEndB && regionPtrC < regionEndC && regionPtrD < regionEndD;) {
+//                regionPtrA = doProcessLine(regionPtrA, vectorSize);
+//                regionPtrB = doProcessLine(regionPtrB, vectorSize);
+//                regionPtrC = doProcessLine(regionPtrC, vectorSize);
+//                regionPtrD = doProcessLine(regionPtrD, vectorSize);
+//            }
+
             long regionStartA = regionStart;
             long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
 
             long regionStartB = regionEndA;
-            long regionEndB = findClosestLineEnd(regionStartB + segmentSize);
-
-            long regionStartC = regionEndB;
-            long regionEndC = findClosestLineEnd(regionStartC + segmentSize);
-
-            long regionStartD = regionEndC;
-            long regionEndD = regionEnd;
-
-            System.out.println(Thread.currentThread().getName() + " > Region  start: " + regionStart  + ", region  end: " + regionEnd);
-            System.out.println(Thread.currentThread().getName() + " > RegionA start: " + regionStartA + ", regionA end: " + regionEndA);
-            System.out.println(Thread.currentThread().getName() + " > RegionB start: " + regionStartB + ", regionB end: " + regionEndB);
-            System.out.println(Thread.currentThread().getName() + " > RegionC start: " + regionStartC + ", regionC end: " + regionEndC);
-            System.out.println(Thread.currentThread().getName() + " > RegionD start: " + regionStartD + ", regionD end: " + regionEndD);
+            long regionEndB = regionEnd;
 
             // Read and process region
-            for (long regionPtrA = regionStartA, regionPtrB = regionStartB, regionPtrC = regionStartC, regionPtrD = regionStartD;
-                 regionPtrA < regionEndA && regionPtrB < regionEndB && regionPtrC < regionEndC && regionPtrD < regionEndD;) {
+            for (long regionPtrA = regionStartA, regionPtrB = regionStartB;
+                 regionPtrA < regionEndA && regionPtrB < regionEndB;) {
                 regionPtrA = doProcessLine(regionPtrA, vectorSize);
                 regionPtrB = doProcessLine(regionPtrB, vectorSize);
-                regionPtrC = doProcessLine(regionPtrC, vectorSize);
-                regionPtrD = doProcessLine(regionPtrD, vectorSize);
             }
         }
 
