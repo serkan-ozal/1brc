@@ -334,7 +334,7 @@ public class CalculateAverage_serkan_ozal {
 
         private void doProcessRegion(long regionStart, long regionEnd) {
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
-            final long segmentSize = size / 4;
+            final long segmentSize = size / 2;
 
 //            long regionStartA = regionStart;
 //            long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
