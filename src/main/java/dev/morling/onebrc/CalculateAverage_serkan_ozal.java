@@ -295,23 +295,23 @@ public class CalculateAverage_serkan_ozal {
                 // Close current processor's own local memory arena (if no shared global memory arena is used) now
                 // and merge its own results after then.
 
-//                boolean merged = result.tryMergeInto(map);
-//                if (VERBOSE && merged) {
-//                    System.out.println("[Processor-" + Thread.currentThread().getName() + "] Result merged at " + System.currentTimeMillis());
-//                }
-//                if (!merged) {
-//                    if (!arenaGiven) {
-//                        a.close();
-//                        a = null;
-//                        if (VERBOSE) {
-//                            System.out.println("[Processor-" + Thread.currentThread().getName() + "] Arena closed at " + System.currentTimeMillis());
-//                        }
-//                    }
-//                    result.mergeInto(map);
-//                    if (VERBOSE) {
-//                        System.out.println("[Processor-" + Thread.currentThread().getName() + "] Result merged at " + System.currentTimeMillis());
-//                    }
-//                }
+                boolean merged = result.tryMergeInto(map);
+                if (VERBOSE && merged) {
+                    System.out.println("[Processor-" + Thread.currentThread().getName() + "] Result merged at " + System.currentTimeMillis());
+                }
+                if (!merged) {
+                    if (!arenaGiven) {
+                        a.close();
+                        a = null;
+                        if (VERBOSE) {
+                            System.out.println("[Processor-" + Thread.currentThread().getName() + "] Arena closed at " + System.currentTimeMillis());
+                        }
+                    }
+                    result.mergeInto(map);
+                    if (VERBOSE) {
+                        System.out.println("[Processor-" + Thread.currentThread().getName() + "] Result merged at " + System.currentTimeMillis());
+                    }
+                }
             }
             finally {
                 // If local memory arena is managed here and not closed yet, close it here
@@ -324,12 +324,37 @@ public class CalculateAverage_serkan_ozal {
             }
         }
 
+        private long findClosestLineEnd(long endPos) {
+            int i = 1;
+            while (i < MAX_LINE_LENGTH && U.getByte(endPos - i) != NEW_LINE_SEPARATOR) {
+                i++;
+            }
+            return endPos - i + 1;
+        }
+
         private void doProcessRegion(long regionStart, long regionEnd) {
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
+            final long segmentSize = size / 4;
+
+            long regionStartA = regionStart;
+            long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
+
+            long regionStartB = regionEndA;
+            long regionEndB = findClosestLineEnd(regionStartB + segmentSize);
+
+            long regionStartC = regionEndB;
+            long regionEndC = findClosestLineEnd(regionStartC + segmentSize);
+
+            long regionStartD = regionEndC;
+            long regionEndD = regionEnd;
 
             // Read and process region
-            for (long regionPtr = regionStart; regionPtr < regionEnd;) {
-                regionPtr = doProcessLine(regionPtr, vectorSize);
+            for (long regionPtrA = regionStartA, regionPtrB = regionStartB, regionPtrC = regionStartC, regionPtrD = regionStartD;
+                 regionPtrA < regionEndA && regionPtrB < regionEndB && regionPtrC < regionEndC && regionPtrD < regionEndD;) {
+                regionPtrA = doProcessLine(regionPtrA, vectorSize);
+                regionPtrB = doProcessLine(regionPtrB, vectorSize);
+                regionPtrC = doProcessLine(regionPtrC, vectorSize);
+                regionPtrD = doProcessLine(regionPtrD, vectorSize);
             }
         }
 
