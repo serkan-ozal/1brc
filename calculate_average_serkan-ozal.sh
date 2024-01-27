@@ -18,13 +18,12 @@
 JAVA_OPTS="--enable-preview --enable-native-access=ALL-UNNAMED --add-modules=jdk.incubator.vector"
 JAVA_OPTS="$JAVA_OPTS -XX:-TieredCompilation -XX:MaxInlineSize=10000 -XX:InlineSmallCode=10000 -XX:FreqInlineSize=10000"
 JAVA_OPTS="$JAVA_OPTS -Djdk.incubator.vector.VECTOR_ACCESS_OOB_CHECK=0"
-#JAVA_OPTS="$JAVA_OPTS -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xms128m -Xmx128m -XX:+AlwaysPreTouch"
-JAVA_OPTS="$JAVA_OPTS -XX:+UseParallelGC"
+JAVA_OPTS="$JAVA_OPTS -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xms128m -Xmx128m -XX:+AlwaysPreTouch"
 if [[ ! "$(uname -s)" = "Darwin" ]]; then
   JAVA_OPTS="$JAVA_OPTS -XX:+UseTransparentHugePages"
 fi
 
-CONFIGS="CLOSE_STDOUT_ON_RESULT=true USE_SHARED_ARENA=true USE_SHARED_REGION=true USE_ILP=true THREAD_COUNT=8"
+CONFIGS="CLOSE_STDOUT_ON_RESULT=true USE_SHARED_ARENA=true USE_SHARED_REGION=true USE_ILP=true"
 
 # TODO Generate/Get a random and available file descriptor number?
 fd=1234
