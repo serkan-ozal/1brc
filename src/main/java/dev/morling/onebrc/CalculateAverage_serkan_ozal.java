@@ -71,6 +71,7 @@ public class CalculateAverage_serkan_ozal {
     private static final int REGION_COUNT = getIntegerConfig("REGION_COUNT", -1);
     private static final boolean USE_SHARED_ARENA = getBooleanConfig("USE_SHARED_ARENA", true);
     private static final boolean USE_SHARED_REGION = getBooleanConfig("USE_SHARED_REGION", true);
+    private static final boolean USE_ILP = getBooleanConfig("USE_ILP", false);
     private static final int MAP_CAPACITY = getIntegerConfig("MAP_CAPACITY", 1 << 17);
     private static final boolean CLOSE_STDOUT_ON_RESULT = getBooleanConfig("CLOSE_STDOUT_ON_RESULT", true);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -282,7 +283,12 @@ public class CalculateAverage_serkan_ozal {
                 long regionStart = regionGiven ? (r.address() + start) : r.address();
                 long regionEnd = regionStart + size;
 
-                doProcessRegion(regionStart, regionEnd);
+                if (USE_ILP) {
+                    doProcessRegionWithILP(regionStart, regionEnd);
+                } else {
+                    doProcessRegion(regionStart, regionEnd);
+                }
+
                 if (VERBOSE) {
                     System.out.println("[Processor-" + Thread.currentThread().getName() + "] Region processed at " + System.currentTimeMillis());
                 }
@@ -334,32 +340,51 @@ public class CalculateAverage_serkan_ozal {
 
         private void doProcessRegion(long regionStart, long regionEnd) {
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
+
+            // Read and process region
+            for (long regionPtr = regionStart; regionPtr < regionEnd;) {
+                regionPtr = doProcessLine(regionPtr, vectorSize);
+            }
+        }
+
+        private void doProcessRegionWithILP(long regionStart, long regionEnd) {
+            final int vectorSize = BYTE_SPECIES.vectorByteSize();
             final long segmentSize = size / 2;
 
-//            long regionStartA = regionStart;
-//            long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
+//            final long regionStartA = regionStart;
+//            final long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
 //
-//            long regionStartB = regionEndA;
-//            long regionEndB = findClosestLineEnd(regionStartB + segmentSize);
+//            final long regionStartB = regionEndA;
+//            final long regionEndB = findClosestLineEnd(regionStartB + segmentSize);
 //
-//            long regionStartC = regionEndB;
-//            long regionEndC = findClosestLineEnd(regionStartC + segmentSize);
+//            final long regionStartC = regionEndB;
+//            final long regionEndC = findClosestLineEnd(regionStartC + segmentSize);
 //
-//            long regionStartD = regionEndC;
-//            long regionEndD = regionEnd;
+//            final long regionStartD = regionEndC;
+//            final long regionEndD = regionEnd;
 //
-//            System.out.println(Thread.currentThread().getName() + " > Region  start: " + regionStart  + ", region  end: " + regionEnd);
-//            System.out.println(Thread.currentThread().getName() + " > RegionA start: " + regionStartA + ", regionA end: " + regionEndA);
-//            System.out.println(Thread.currentThread().getName() + " > RegionB start: " + regionStartB + ", regionB end: " + regionEndB);
-//            System.out.println(Thread.currentThread().getName() + " > RegionC start: " + regionStartC + ", regionC end: " + regionEndC);
-//            System.out.println(Thread.currentThread().getName() + " > RegionD start: " + regionStartD + ", regionD end: " + regionEndD);
+//            long regionPtrA, regionPtrB, regionPtrC, regionPtrD;
 //
 //            // Read and process region
-//            for (long regionPtrA = regionStartA, regionPtrB = regionStartB, regionPtrC = regionStartC, regionPtrD = regionStartD;
+//            for (regionPtrA = regionStartA, regionPtrB = regionStartB, regionPtrC = regionStartC, regionPtrD = regionStartD;
 //                 regionPtrA < regionEndA && regionPtrB < regionEndB && regionPtrC < regionEndC && regionPtrD < regionEndD;) {
 //                regionPtrA = doProcessLine(regionPtrA, vectorSize);
 //                regionPtrB = doProcessLine(regionPtrB, vectorSize);
 //                regionPtrC = doProcessLine(regionPtrC, vectorSize);
+//                regionPtrD = doProcessLine(regionPtrD, vectorSize);
+//            }
+//
+//            // Read and process region - tail
+//            while (regionPtrA < regionEndA) {
+//                regionPtrA = doProcessLine(regionPtrA, vectorSize);
+//            }
+//            while (regionPtrB < regionEndB) {
+//                regionPtrB = doProcessLine(regionPtrB, vectorSize);
+//            }
+//            while (regionPtrC < regionEndC) {
+//                regionPtrC = doProcessLine(regionPtrC, vectorSize);
+//            }
+//            while (regionPtrD < regionEndD) {
 //                regionPtrD = doProcessLine(regionPtrD, vectorSize);
 //            }
 
@@ -369,10 +394,20 @@ public class CalculateAverage_serkan_ozal {
             long regionStartB = regionEndA;
             long regionEndB = regionEnd;
 
-            // Read and process region
-            for (long regionPtrA = regionStartA, regionPtrB = regionStartB;
+            long regionPtrA, regionPtrB;
+
+            // Read and process region - main
+            for (regionPtrA = regionStartA, regionPtrB = regionStartB;
                  regionPtrA < regionEndA && regionPtrB < regionEndB;) {
                 regionPtrA = doProcessLine(regionPtrA, vectorSize);
+                regionPtrB = doProcessLine(regionPtrB, vectorSize);
+            }
+
+            // Read and process region - tail
+            while (regionPtrA < regionEndA) {
+                regionPtrA = doProcessLine(regionPtrA, vectorSize);
+            }
+            while (regionPtrB < regionEndB) {
                 regionPtrB = doProcessLine(regionPtrB, vectorSize);
             }
         }
