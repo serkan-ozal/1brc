@@ -328,7 +328,7 @@ public class CalculateAverage_serkan_ozal {
 
         private void doProcessRegion(MemorySegment region, long regionAddress, long regionStart, long regionEnd) {
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
-            final long regionMainLimit = regionEnd - MAX_LINE_LENGTH;
+            final long regionMainLimit = regionEnd - BYTE_SPECIES_SIZE;
 
             long regionPtr;
 
