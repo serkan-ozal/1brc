@@ -516,7 +516,20 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private void print() {
-            System.out.println(resultMap);
+            StringBuilder sb = new StringBuilder(1 << 14);
+            boolean firstEntryAppended = false;
+            sb.append("{");
+            for (Map.Entry<String, KeyResult> e : resultMap.entrySet()) {
+                if (firstEntryAppended) {
+                    sb.append(", ");
+                }
+                String key = e.getKey();
+                KeyResult value = e.getValue();
+                sb.append(key).append("=").append(value);
+                firstEntryAppended = true;
+            }
+            sb.append('}');
+            System.out.println(sb);
         }
 
     }

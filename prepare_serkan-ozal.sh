@@ -39,4 +39,4 @@ CLASS_NAME="CalculateAverage_serkan_ozal"
 # Create CDS archive
 java ${JAVA_OPTS} -Xshare:off -XX:DumpLoadedClassList=target/${CLASS_NAME}.classlist --class-path target/average-1.0.0-SNAPSHOT.jar dev.morling.onebrc.${CLASS_NAME}
 java ${JAVA_OPTS} -Xshare:dump -XX:SharedClassListFile=target/${CLASS_NAME}.classlist -XX:SharedArchiveFile=target/${CLASS_NAME}.jsa --class-path target/average-1.0.0-SNAPSHOT.jar
-java ${JAVA_OPTS} -Xshare:on -XX:SharedArchiveFile=target/${CLASS_NAME}.jsa -XX:ArchiveClassesAtExit=target/${CLASS_NAME}_dynamic.jsa --class-path target/average-1.0.0-SNAPSHOT.jar dev.morling.onebrc.${CLASS_NAME}
+java ${JAVA_OPTS} -Xshare:on -XX:SharedArchiveFile=target/${CLASS_NAME}.jsa -XX:ArchiveClassesAtExit=target/${CLASS_NAME}_cds.jsa --class-path target/average-1.0.0-SNAPSHOT.jar dev.morling.onebrc.${CLASS_NAME}
