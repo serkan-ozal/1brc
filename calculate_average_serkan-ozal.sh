@@ -27,9 +27,9 @@ if [[ ! "$(uname -s)" = "Darwin" ]]; then
 fi
 JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=quiet"
 JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::calculateKeyHash"
-JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::putKey"
-JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::keysEqual"
-JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::putValue"
+#JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::putKey"
+#JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::keysEqual"
+#JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::putValue"
 
 CONFIGS="USE_SHARED_ARENA=true USE_SHARED_REGION=true CLOSE_STDOUT_ON_RESULT=true"
 
