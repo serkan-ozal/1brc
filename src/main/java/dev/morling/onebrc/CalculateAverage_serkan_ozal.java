@@ -435,8 +435,31 @@ public class CalculateAverage_serkan_ozal {
                     regionPtr2++;
                 }
 
-                int keyHash1 = map.calculateKeyHash(keyStartPtr1, keyLength1);
-                int keyHash2 = map.calculateKeyHash(keyStartPtr2, keyLength2);
+
+                int seed = 0x9E3779B9;
+                int rotate = 5;
+
+                int x1, y1;
+                if (keyLength1 >= Integer.BYTES) {
+                    x1 = U.getInt(keyStartPtr1);
+                    y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
+                }
+                else {
+                    x1 = U.getByte(keyStartPtr1);
+                    y1 = U.getByte(keyStartPtr1 + keyLength1 - Byte.BYTES);
+                }
+                int x2, y2;
+                if (keyLength2 >= Integer.BYTES) {
+                    x2 = U.getInt(keyStartPtr2);
+                    y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
+                }
+                else {
+                    x2 = U.getByte(keyStartPtr2);
+                    y2 = U.getByte(keyStartPtr2 + keyLength2 - Byte.BYTES);
+                }
+
+                int keyHash1 = (Integer.rotateLeft(x1 * seed, rotate) ^ y1) * seed;
+                int keyHash2 = (Integer.rotateLeft(x2 * seed, rotate) ^ y2) * seed;
 
                 int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
                 int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
