@@ -349,7 +349,7 @@ public class CalculateAverage_serkan_ozal {
             for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
                 byte b = U.getByte(i);
                 if (b == KEY_VALUE_SEPARATOR) {
-                    long baseOffset = map.putKey(null, j, (int) (i - j));
+                    int baseOffset = map.putKey(null, j, (int) (i - j));
                     i = extractValue(i + 1, map, baseOffset);
                     j = i;
                 }
@@ -648,8 +648,8 @@ public class CalculateAverage_serkan_ozal {
                 // Since majority of the city names >= 8 bytes and <= 16 bytes,
                 // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
                 ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
-                int eqMask = (int) keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
-                int eqCount = Integer.numberOfTrailingZeros(~eqMask);
+                int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).not().firstTrue();
+//                int eqCount = Integer.numberOfTrailingZeros(~eqMask);
                 if (eqCount >= keyLength) {
                     return true;
                 }
