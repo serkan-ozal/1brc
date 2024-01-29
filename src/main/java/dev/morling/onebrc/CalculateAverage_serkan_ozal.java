@@ -343,9 +343,9 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private void doProcessRegion(long regionStart, long regionEnd) {
-//            final int vectorSize = BYTE_SPECIES.vectorByteSize();
-//            final long regionMainLimit = regionEnd - BYTE_SPECIES_SIZE;
-//
+            final int vectorSize = BYTE_SPECIES.vectorByteSize();
+            final long regionMainLimit = regionEnd - BYTE_SPECIES_SIZE;
+
 //            long regionPtr;
 //
 //            // Read and process region - main
@@ -366,45 +366,95 @@ public class CalculateAverage_serkan_ozal {
 //                }
 //            }
 
-            final int vectorSize = BYTE_SPECIES.vectorByteSize();
+//            final int vectorSize = BYTE_SPECIES.vectorByteSize();
+//            final long size = regionEnd - regionStart;
+//            final long segmentSize = size / 4;
+//
+//            final long regionStartA = regionStart;
+//            final long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
+//
+//            final long regionStartB = regionEndA;
+//            final long regionEndB = findClosestLineEnd(regionStartB + segmentSize);
+//
+//            final long regionStartC = regionEndB;
+//            final long regionEndC = findClosestLineEnd(regionStartC + segmentSize);
+//
+//            final long regionStartD = regionEndC;
+//            final long regionEndD = regionEnd;
+//
+//            long regionPtrA, regionPtrB, regionPtrC, regionPtrD;
+//
+//            // Read and process region
+//            for (regionPtrA = regionStartA, regionPtrB = regionStartB, regionPtrC = regionStartC, regionPtrD = regionStartD;
+//                 regionPtrA < regionEndA && regionPtrB < regionEndB && regionPtrC < regionEndC && regionPtrD < regionEndD;) {
+//                regionPtrA = doProcessLine(regionPtrA, vectorSize);
+//                regionPtrB = doProcessLine(regionPtrB, vectorSize);
+//                regionPtrC = doProcessLine(regionPtrC, vectorSize);
+//                regionPtrD = doProcessLine(regionPtrD, vectorSize);
+//            }
+//
+//            // Read and process region - tail
+//            while (regionPtrA < regionEndA) {
+//                regionPtrA = doProcessLine(regionPtrA, vectorSize);
+//            }
+//            while (regionPtrB < regionEndB) {
+//                regionPtrB = doProcessLine(regionPtrB, vectorSize);
+//            }
+//            while (regionPtrC < regionEndC) {
+//                regionPtrC = doProcessLine(regionPtrC, vectorSize);
+//            }
+//            while (regionPtrD < regionEndD) {
+//                regionPtrD = doProcessLine(regionPtrD, vectorSize);
+//            }
+
             final long size = regionEnd - regionStart;
             final long segmentSize = size / 4;
 
-            final long regionStartA = regionStart;
-            final long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
+            long regionStartA = regionStart;
+            long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
 
-            final long regionStartB = regionEndA;
-            final long regionEndB = findClosestLineEnd(regionStartB + segmentSize);
+            long regionStartB = regionEndA;
+            long regionEndB = regionEnd;
 
-            final long regionStartC = regionEndB;
-            final long regionEndC = findClosestLineEnd(regionStartC + segmentSize);
+            long regionPtr1, regionPtr2;
 
-            final long regionStartD = regionEndC;
-            final long regionEndD = regionEnd;
+            // Read and process region - main
+            for (regionPtr1 = regionStartA, regionPtr2 = regionStartB;
+                 regionPtr1 < regionEndA && regionPtr2 < regionEndB;) {
+                long keyStartPtr1 = regionPtr1;
+                long keyStartPtr2 = regionPtr2;
 
-            long regionPtrA, regionPtrB, regionPtrC, regionPtrD;
+                ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr1, NATIVE_BYTE_ORDER);
+                ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr2, NATIVE_BYTE_ORDER);
 
-            // Read and process region
-            for (regionPtrA = regionStartA, regionPtrB = regionStartB, regionPtrC = regionStartC, regionPtrD = regionStartD;
-                 regionPtrA < regionEndA && regionPtrB < regionEndB && regionPtrC < regionEndC && regionPtrD < regionEndD;) {
-                regionPtrA = doProcessLine(regionPtrA, vectorSize);
-                regionPtrB = doProcessLine(regionPtrB, vectorSize);
-                regionPtrC = doProcessLine(regionPtrC, vectorSize);
-                regionPtrD = doProcessLine(regionPtrD, vectorSize);
-            }
+                int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
+                int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
 
-            // Read and process region - tail
-            while (regionPtrA < regionEndA) {
-                regionPtrA = doProcessLine(regionPtrA, vectorSize);
-            }
-            while (regionPtrB < regionEndB) {
-                regionPtrB = doProcessLine(regionPtrB, vectorSize);
-            }
-            while (regionPtrC < regionEndC) {
-                regionPtrC = doProcessLine(regionPtrC, vectorSize);
-            }
-            while (regionPtrD < regionEndD) {
-                regionPtrD = doProcessLine(regionPtrD, vectorSize);
+                if (keyLength1 != vectorSize) {
+                    regionPtr1 += (keyLength1 + 1);
+                } else {
+                    regionPtr1 += vectorSize;
+                    for (; U.getByte(regionPtr1) != KEY_VALUE_SEPARATOR; regionPtr1++)
+                        ;
+                    keyLength1 = (int) (regionPtr1 - keyStartPtr1);
+                    regionPtr1++;
+                }
+                if (keyLength2 != vectorSize) {
+                    regionPtr2 += (keyLength2 + 1);
+                } else {
+                    regionPtr2 += vectorSize;
+                    for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
+                        ;
+                    keyLength2 = (int) (regionPtr2 - keyStartPtr2);
+                    regionPtr2++;
+                }
+
+                // Put key and get map offset to put value
+                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1);
+                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2);
+
+                regionPtr1 = extractValue(regionPtr1, map, entryOffset1);
+                regionPtr2 = extractValue(regionPtr2, map, entryOffset2);
             }
         }
 
@@ -440,6 +490,7 @@ public class CalculateAverage_serkan_ozal {
             // Extract value, put it into map and return next position in the region to continue processing from there
             return extractValue(regionPtr, map, entryOffset);
         }
+
     }
 
     // Credits: merykitty
