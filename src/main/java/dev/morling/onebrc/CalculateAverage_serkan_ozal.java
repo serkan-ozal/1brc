@@ -386,7 +386,7 @@ public class CalculateAverage_serkan_ozal {
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // Put key and get map offset to put value
-            long entryOffset = map.putKey(keyVector, keyStartPtr, keyLength, regionPtr);
+            long entryOffset = map.putKey(keyVector, keyStartPtr, keyLength);
 
             // Extract value, put it into map and return next position in the region to continue processing from there
             return extractValue(regionPtr, map, entryOffset);
@@ -597,24 +597,24 @@ public class CalculateAverage_serkan_ozal {
         }
 
         // Credits: merykitty
-        private static int calculateKeyHash(long address, int keyLength, long regionPtr) {
+        private static int calculateKeyHash(long address, int keyLength) {
             int seed = 0x9E3779B9;
             int rotate = 5;
             int x, y;
             if (keyLength >= Integer.BYTES) {
                 x = U.getInt(address);
-                y = U.getInt(regionPtr - 5);
+                y = U.getInt(address + keyLength - Integer.BYTES);
             }
             else {
                 x = U.getByte(address);
                 y = U.getByte(address + keyLength - Byte.BYTES);
             }
-            return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
+            return (Integer.rotateLeft(x, rotate) ^ y) * seed;
         }
 
-        private long putKey(ByteVector keyVector, long keyStartAddress, int keyLength, long regionPtr) {
+        private long putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
             // Calculate hash of key
-            int keyHash = calculateKeyHash(keyStartAddress, keyLength, regionPtr);
+            int keyHash = calculateKeyHash(keyStartAddress, keyLength);
             // and get the position of the entry in the linear map based on calculated hash
             int idx = (keyHash & ENTRY_HASH_MASK) << ENTRY_SIZE_SHIFT;
 
