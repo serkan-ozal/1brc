@@ -342,7 +342,36 @@ public class CalculateAverage_serkan_ozal {
 
             // Read and process region - main
             for (regionPtr = regionStart; regionPtr < regionMainLimit;) {
-                regionPtr = doProcessLine(regionPtr, vectorSize);
+                // Find key/value separator
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                long keyStartPtr = regionPtr;
+
+                // Vectorized search for key/value separator
+                ByteVector keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr, NATIVE_BYTE_ORDER);
+
+                int keyLength = keyVector.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
+                // Check whether key/value separator is found in the first vector (city name is <= vector size)
+                if (keyLength != vectorSize) {
+                    regionPtr += (keyLength + 1);
+                }
+                else {
+                    regionPtr += vectorSize;
+                    for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
+                        ;
+                    keyLength = (int) (regionPtr - keyStartPtr);
+                    regionPtr++;
+                    // I have tried vectorized search for key/value separator in the remaining part,
+                    // but since majority (99%) of the city names <= 16 bytes
+                    // and other a few longer city names (have length < 16 and <= 32) not close to 32 bytes,
+                    // byte by byte search is better in terms of performance (according to my experiments) and simplicity.
+                }
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                // Put key and get map offset to put value
+                int entryOffset = map.putKey(keyVector, keyStartPtr, keyLength);
+
+                // Extract value, put it into map and return next position in the region to continue processing from there
+                regionPtr = extractValue(regionPtr, map, entryOffset);
             }
 
             // Read and process region - tail
@@ -598,7 +627,7 @@ public class CalculateAverage_serkan_ozal {
 
         // Credits: merykitty
         private static int calculateKeyHash(long address, int keyLength) {
-//            int seed = 0x9E3779B9;
+            int seed = 0x9E3779B9;
             int rotate = 5;
             int x, y;
             if (keyLength >= Integer.BYTES) {
@@ -609,7 +638,7 @@ public class CalculateAverage_serkan_ozal {
                 x = U.getByte(address);
                 y = U.getByte(address + keyLength - Byte.BYTES);
             }
-            return (Integer.rotateLeft(x, rotate) ^ y);
+            return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
         }
 
         private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
