@@ -408,27 +408,39 @@ public class CalculateAverage_serkan_ozal {
 //            }
 
             final long size = regionEnd - regionStart;
-            final long segmentSize = size / 2;
+            final long segmentSize = size / 4;
 
-            long regionStartA = regionStart;
-            long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
+            final long regionStartA = regionStart;
+            final long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
 
-            long regionStartB = regionEndA;
-            long regionEndB = regionEnd;
+            final long regionStartB = regionEndA;
+            final long regionEndB = findClosestLineEnd(regionStartB + segmentSize);
 
-            long regionPtr1, regionPtr2;
+            final long regionStartC = regionEndB;
+            final long regionEndC = findClosestLineEnd(regionStartC + segmentSize);
+
+            final long regionStartD = regionEndC;
+            final long regionEndD = regionEnd;
+
+            long regionPtr1, regionPtr2, regionPtr3, regionPtr4;
 
             // Read and process region - main
-            for (regionPtr1 = regionStartA, regionPtr2 = regionStartB;
-                 regionPtr1 < regionEndA && regionPtr2 < regionEndB;) {
+            for (regionPtr1 = regionStartA, regionPtr2 = regionStartB, regionPtr3 = regionStartC, regionPtr4 = regionStartD;
+                 regionPtr1 < regionEndA && regionPtr2 < regionEndB && regionPtr3 < regionEndC && regionPtr4 < regionEndD;) {
                 long keyStartPtr1 = regionPtr1;
                 long keyStartPtr2 = regionPtr2;
+                long keyStartPtr3 = regionPtr3;
+                long keyStartPtr4 = regionPtr4;
 
                 ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr1, NATIVE_BYTE_ORDER);
                 ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr2, NATIVE_BYTE_ORDER);
+                ByteVector keyVector3 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr3, NATIVE_BYTE_ORDER);
+                ByteVector keyVector4 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr4, NATIVE_BYTE_ORDER);
 
                 int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
                 int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
+                int keyLength3 = keyVector3.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
+                int keyLength4 = keyVector4.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
 
                 if (keyLength1 != vectorSize) {
                     regionPtr1 += (keyLength1 + 1);
@@ -448,13 +460,35 @@ public class CalculateAverage_serkan_ozal {
                     keyLength2 = (int) (regionPtr2 - keyStartPtr2);
                     regionPtr2++;
                 }
+                if (keyLength3 != vectorSize) {
+                    regionPtr3 += (keyLength3 + 1);
+                } else {
+                    regionPtr3 += vectorSize;
+                    for (; U.getByte(regionPtr3) != KEY_VALUE_SEPARATOR; regionPtr3++)
+                        ;
+                    keyLength3 = (int) (regionPtr3 - keyStartPtr3);
+                    regionPtr3++;
+                }
+                if (keyLength4 != vectorSize) {
+                    regionPtr4 += (keyLength4 + 1);
+                } else {
+                    regionPtr4 += vectorSize;
+                    for (; U.getByte(regionPtr4) != KEY_VALUE_SEPARATOR; regionPtr4++)
+                        ;
+                    keyLength4 = (int) (regionPtr4 - keyStartPtr4);
+                    regionPtr4++;
+                }
 
                 // Put key and get map offset to put value
                 int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1);
                 int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2);
+                int entryOffset3 = map.putKey(keyVector3, keyStartPtr3, keyLength3);
+                int entryOffset4 = map.putKey(keyVector4, keyStartPtr4, keyLength4);
 
                 regionPtr1 = extractValue(regionPtr1, map, entryOffset1);
                 regionPtr2 = extractValue(regionPtr2, map, entryOffset2);
+                regionPtr3 = extractValue(regionPtr3, map, entryOffset3);
+                regionPtr4 = extractValue(regionPtr4, map, entryOffset4);
             }
         }
 
