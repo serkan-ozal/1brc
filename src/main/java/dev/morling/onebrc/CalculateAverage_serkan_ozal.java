@@ -367,21 +367,44 @@ public class CalculateAverage_serkan_ozal {
 //            }
 
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
-            long size = regionEnd - regionStart;
-            final long segmentSize = size / 2;
-            long regionStartA = regionStart;
-            long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
+            final long size = regionEnd - regionStart;
+            final long segmentSize = size / 4;
 
-            long regionStartB = regionEndA;
-            long regionEndB = regionEnd;
+            final long regionStartA = regionStart;
+            final long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
 
-            long regionPtrA, regionPtrB;
+            final long regionStartB = regionEndA;
+            final long regionEndB = findClosestLineEnd(regionStartB + segmentSize);
 
-            // Read and process region - main
-            for (regionPtrA = regionStartA, regionPtrB = regionStartB;
-                 regionPtrA < regionEndA && regionPtrB < regionEndB;) {
+            final long regionStartC = regionEndB;
+            final long regionEndC = findClosestLineEnd(regionStartC + segmentSize);
+
+            final long regionStartD = regionEndC;
+            final long regionEndD = regionEnd;
+
+            long regionPtrA, regionPtrB, regionPtrC, regionPtrD;
+
+            // Read and process region
+            for (regionPtrA = regionStartA, regionPtrB = regionStartB, regionPtrC = regionStartC, regionPtrD = regionStartD;
+                 regionPtrA < regionEndA && regionPtrB < regionEndB && regionPtrC < regionEndC && regionPtrD < regionEndD;) {
                 regionPtrA = doProcessLine(regionPtrA, vectorSize);
                 regionPtrB = doProcessLine(regionPtrB, vectorSize);
+                regionPtrC = doProcessLine(regionPtrC, vectorSize);
+                regionPtrD = doProcessLine(regionPtrD, vectorSize);
+            }
+
+            // Read and process region - tail
+            while (regionPtrA < regionEndA) {
+                regionPtrA = doProcessLine(regionPtrA, vectorSize);
+            }
+            while (regionPtrB < regionEndB) {
+                regionPtrB = doProcessLine(regionPtrB, vectorSize);
+            }
+            while (regionPtrC < regionEndC) {
+                regionPtrC = doProcessLine(regionPtrC, vectorSize);
+            }
+            while (regionPtrD < regionEndD) {
+                regionPtrD = doProcessLine(regionPtrD, vectorSize);
             }
         }
 
