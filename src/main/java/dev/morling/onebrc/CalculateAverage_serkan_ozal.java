@@ -648,8 +648,9 @@ public class CalculateAverage_serkan_ozal {
                 // Since majority of the city names >= 8 bytes and <= 16 bytes,
                 // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
                 ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
-                long eqMask = keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
-                int eqCount = Long.numberOfTrailingZeros(~eqMask);
+                // long eqMask = keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
+                // int eqCount = Long.numberOfTrailingZeros(~eqMask);
+                int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).not().firstTrue();
                 if (eqCount >= keyLength) {
                     return true;
                 }
