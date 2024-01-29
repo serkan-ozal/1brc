@@ -643,7 +643,6 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, int keyStartArrayOffset) {
-            int keyCheckIdx = 0;
             if (keyVector != null) {
                 // Use vectorized search for the comparison of keys.
                 // Since majority of the city names >= 8 bytes and <= 16 bytes,
@@ -657,10 +656,11 @@ public class CalculateAverage_serkan_ozal {
                 else if (keyLength <= BYTE_SPECIES_SIZE) {
                     return false;
                 }
-                keyCheckIdx = BYTE_SPECIES_SIZE;
             }
 
             // Compare remaining parts of the keys
+
+            int keyCheckIdx = keyVector != null ? BYTE_SPECIES_SIZE : 0;
 
             int normalizedKeyLength = keyLength;
             if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
