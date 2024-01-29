@@ -473,38 +473,38 @@ public class CalculateAverage_serkan_ozal {
             }
         }
 
-        private long doProcessLine(long regionPtr, int vectorSize) {
-            // Find key/value separator
-            ////////////////////////////////////////////////////////////////////////////////////////////////////////
-            long keyStartPtr = regionPtr;
-
-            // Vectorized search for key/value separator
-            ByteVector keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr, NATIVE_BYTE_ORDER);
-
-            int keyLength = keyVector.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-            // Check whether key/value separator is found in the first vector (city name is <= vector size)
-            if (keyLength != vectorSize) {
-                regionPtr += (keyLength + 1);
-            }
-            else {
-                regionPtr += vectorSize;
-                for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
-                    ;
-                keyLength = (int) (regionPtr - keyStartPtr);
-                regionPtr++;
-                // I have tried vectorized search for key/value separator in the remaining part,
-                // but since majority (99%) of the city names <= 16 bytes
-                // and other a few longer city names (have length < 16 and <= 32) not close to 32 bytes,
-                // byte by byte search is better in terms of performance (according to my experiments) and simplicity.
-            }
-            ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-            // Put key and get map offset to put value
-            int entryOffset = map.putKey(keyVector, keyStartPtr, keyLength);
-
-            // Extract value, put it into map and return next position in the region to continue processing from there
-            return extractValue(regionPtr, map, entryOffset);
-        }
+//        private long doProcessLine(long regionPtr, int vectorSize) {
+//            // Find key/value separator
+//            ////////////////////////////////////////////////////////////////////////////////////////////////////////
+//            long keyStartPtr = regionPtr;
+//
+//            // Vectorized search for key/value separator
+//            ByteVector keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr, NATIVE_BYTE_ORDER);
+//
+//            int keyLength = keyVector.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
+//            // Check whether key/value separator is found in the first vector (city name is <= vector size)
+//            if (keyLength != vectorSize) {
+//                regionPtr += (keyLength + 1);
+//            }
+//            else {
+//                regionPtr += vectorSize;
+//                for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
+//                    ;
+//                keyLength = (int) (regionPtr - keyStartPtr);
+//                regionPtr++;
+//                // I have tried vectorized search for key/value separator in the remaining part,
+//                // but since majority (99%) of the city names <= 16 bytes
+//                // and other a few longer city names (have length < 16 and <= 32) not close to 32 bytes,
+//                // byte by byte search is better in terms of performance (according to my experiments) and simplicity.
+//            }
+//            ////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//            // Put key and get map offset to put value
+//            int entryOffset = map.putKey(keyVector, keyStartPtr, keyLength);
+//
+//            // Extract value, put it into map and return next position in the region to continue processing from there
+//            return extractValue(regionPtr, map, entryOffset);
+//        }
 
     }
 
