@@ -346,52 +346,52 @@ public class CalculateAverage_serkan_ozal {
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
             final long regionMainLimit = regionEnd - BYTE_SPECIES_SIZE;
 
-            // long regionPtr;
-            //
-            // // Read and process region - main
-            // for (regionPtr = regionStart; regionPtr < regionMainLimit;) {
-            // regionPtr = doProcessLine(regionPtr, vectorSize);
-            // }
-            //
-            // // Read and process region - tail
-            // for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
-            // byte b = U.getByte(i);
-            // if (b == KEY_VALUE_SEPARATOR) {
-            // int baseOffset = map.putKey(null, j, (int) (i - j));
-            // i = extractValue(i + 1, map, baseOffset);
-            // j = i;
-            // }
-            // else {
-            // i++;
-            // }
-            // }
+//            long regionPtr;
+//
+//            // Read and process region - main
+//            for (regionPtr = regionStart; regionPtr < regionMainLimit;) {
+//                regionPtr = doProcessLine(regionPtr, vectorSize);
+//            }
+//
+//            // Read and process region - tail
+//            for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
+//                byte b = U.getByte(i);
+//                if (b == KEY_VALUE_SEPARATOR) {
+//                    int baseOffset = map.putKey(null, j, (int) (i - j));
+//                    i = extractValue(i + 1, map, baseOffset);
+//                    j = i;
+//                }
+//                else {
+//                    i++;
+//                }
+//            }
 
-            // final int vectorSize = BYTE_SPECIES.vectorByteSize();
-            // final long size = regionEnd - regionStart;
-            // final long segmentSize = size / 2;
-            //
-            // final long regionStartA = regionStart;
-            // final long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
-            //
-            // final long regionStartB = regionEndA;
-            // final long regionEndB = regionEnd;
-            //
-            // long regionPtrA, regionPtrB;
-            //
-            // // Read and process region
-            // for (regionPtrA = regionStartA, regionPtrB = regionStartB;
-            // regionPtrA < regionEndA && regionPtrB < regionEndB;) {
-            // regionPtrA = doProcessLine(regionPtrA, vectorSize);
-            // regionPtrB = doProcessLine(regionPtrB, vectorSize);
-            // }
-            //
-            // // Read and process region - tail
-            // while (regionPtrA < regionEndA) {
-            // regionPtrA = doProcessLine(regionPtrA, vectorSize);
-            // }
-            // while (regionPtrB < regionEndB) {
-            // regionPtrB = doProcessLine(regionPtrB, vectorSize);
-            // }
+//            final int vectorSize = BYTE_SPECIES.vectorByteSize();
+//            final long size = regionEnd - regionStart;
+//            final long segmentSize = size / 2;
+//
+//            final long regionStartA = regionStart;
+//            final long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
+//
+//            final long regionStartB = regionEndA;
+//            final long regionEndB = regionEnd;
+//
+//            long regionPtrA, regionPtrB;
+//
+//            // Read and process region
+//            for (regionPtrA = regionStartA, regionPtrB = regionStartB;
+//                 regionPtrA < regionEndA && regionPtrB < regionEndB;) {
+//                regionPtrA = doProcessLine(regionPtrA, vectorSize);
+//                regionPtrB = doProcessLine(regionPtrB, vectorSize);
+//            }
+//
+//            // Read and process region - tail
+//            while (regionPtrA < regionEndA) {
+//                regionPtrA = doProcessLine(regionPtrA, vectorSize);
+//            }
+//            while (regionPtrB < regionEndB) {
+//                regionPtrB = doProcessLine(regionPtrB, vectorSize);
+//            }
 
             final long size = regionEnd - regionStart;
             final long segmentSize = size / 2;
@@ -405,7 +405,8 @@ public class CalculateAverage_serkan_ozal {
             long regionPtr1, regionPtr2;
 
             // Read and process region - main
-            for (regionPtr1 = regionStartA, regionPtr2 = regionStartB; regionPtr1 < regionEndA && regionPtr2 < regionEndB;) {
+            for (regionPtr1 = regionStartA, regionPtr2 = regionStartB;
+                 regionPtr1 < regionEndA && regionPtr2 < regionEndB;) {
                 long keyStartPtr1 = regionPtr1;
                 long keyStartPtr2 = regionPtr2;
 
@@ -417,8 +418,7 @@ public class CalculateAverage_serkan_ozal {
 
                 if (keyLength1 != vectorSize) {
                     regionPtr1 += (keyLength1 + 1);
-                }
-                else {
+                } else {
                     regionPtr1 += vectorSize;
                     for (; U.getByte(regionPtr1) != KEY_VALUE_SEPARATOR; regionPtr1++)
                         ;
@@ -427,8 +427,7 @@ public class CalculateAverage_serkan_ozal {
                 }
                 if (keyLength2 != vectorSize) {
                     regionPtr2 += (keyLength2 + 1);
-                }
-                else {
+                } else {
                     regionPtr2 += vectorSize;
                     for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
                         ;
@@ -436,9 +435,15 @@ public class CalculateAverage_serkan_ozal {
                     regionPtr2++;
                 }
 
+                int keyHash1 = map.calculateKeyHash(keyStartPtr1, keyLength1);
+                int keyHash2 = map.calculateKeyHash(keyStartPtr2, keyLength2);
+
+                int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
+                int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
+
                 // Put key and get map offset to put value
-                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1);
-                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2);
+                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
 
                 regionPtr1 = extractValue(regionPtr1, map, entryOffset1);
                 regionPtr2 = extractValue(regionPtr2, map, entryOffset2);
@@ -699,11 +704,11 @@ public class CalculateAverage_serkan_ozal {
             return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
         }
 
-        private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
-            // Calculate hash of key
-            int keyHash = calculateKeyHash(keyStartAddress, keyLength);
-            // and get the position of the entry in the linear map based on calculated hash
-            int entryIdx = (keyHash & ENTRY_HASH_MASK) << ENTRY_SIZE_SHIFT;
+        private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength, int entryIdx) {
+//            // Calculate hash of key
+//            int keyHash = calculateKeyHash(keyStartAddress, keyLength);
+//            // and get the position of the entry in the linear map based on calculated hash
+//            int entryIdx = (keyHash & ENTRY_HASH_MASK) << ENTRY_SIZE_SHIFT;
 
             // Start searching from the calculated position
             // and continue until find an available slot in case of hash collision
@@ -735,21 +740,12 @@ public class CalculateAverage_serkan_ozal {
                 // Since majority of the city names >= 8 bytes and <= 16 bytes,
                 // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
                 ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
-                // int eqMask = (int) keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
-                // int eqCount = Integer.numberOfTrailingZeros(~eqMask);
-                // if (eqCount >= keyLength) {
-                // return true;
-                // }
-                // else if (keyLength <= BYTE_SPECIES_SIZE) {
-                // return false;
-                // }
-                short eqVector = (short) keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
-                int eqMask = 32 - (Math.min(16, keyLength));
-                boolean eq = (~eqVector << eqMask) == 0;
-                if (eq && keyLength < 16) {
+                int eqMask = (int) keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
+                int eqCount = Integer.numberOfTrailingZeros(~eqMask);
+                if (eqCount >= keyLength) {
                     return true;
                 }
-                if (!eq) {
+                else if (keyLength <= BYTE_SPECIES_SIZE) {
                     return false;
                 }
             }
