@@ -592,7 +592,7 @@ public class CalculateAverage_serkan_ozal {
         private OpenMap() {
             this.data = new byte[MAP_SIZE];
             // Max number of unique keys are 10K, so 1 << 14 (16384) is long enough to hold offsets for all of them
-            this.entryOffsets = new int[1 << 10];
+            this.entryOffsets = new int[1 << 14];
             this.entryOffsetIdx = 0;
         }
 
@@ -609,7 +609,7 @@ public class CalculateAverage_serkan_ozal {
                 x = U.getByte(address);
                 y = U.getByte(address + keyLength - Byte.BYTES);
             }
-            return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
+            return (Integer.rotateLeft(x, rotate) ^ y) * seed;
         }
 
         private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
