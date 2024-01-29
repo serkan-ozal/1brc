@@ -616,12 +616,12 @@ public class CalculateAverage_serkan_ozal {
             // Calculate hash of key
             int keyHash = calculateKeyHash(keyStartAddress, keyLength);
             // and get the position of the entry in the linear map based on calculated hash
-            int idx = (keyHash & ENTRY_HASH_MASK) << ENTRY_SIZE_SHIFT;
+            int entryIdx = (keyHash & ENTRY_HASH_MASK) << ENTRY_SIZE_SHIFT;
 
             // Start searching from the calculated position
             // and continue until find an available slot in case of hash collision
             // TODO Prevent infinite loop if all the slots are in use for other keys
-            for (long entryOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + idx;; entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK) {
+            for (int entryOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx;; entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK) {
                 int keySize = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
                 // Check whether current index is empty (no another key is inserted yet)
                 if (keySize == 0) {
@@ -633,11 +633,10 @@ public class CalculateAverage_serkan_ozal {
                     entryOffsets[entryOffsetIdx++] = entryOffset;
                     return entryOffset;
                 }
-                int keyStartArrayOffset = (int) entryOffset + KEY_ARRAY_OFFSET;
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, keyStartArrayOffset)) {
+                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
                     return entryOffset;
                 }
             }
