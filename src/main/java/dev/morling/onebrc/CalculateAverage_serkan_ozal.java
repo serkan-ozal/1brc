@@ -334,57 +334,54 @@ public class CalculateAverage_serkan_ozal {
             }
         }
 
-        private void doProcessRegion(long regionStart, long regionEnd) {
-            final int vectorSize = BYTE_SPECIES.vectorByteSize();
-            final long regionMainLimit = regionEnd - BYTE_SPECIES_SIZE;
+        private long findClosestLineEnd(long endPos) {
+            int i = 0;
+            while (i < MAX_LINE_LENGTH && U.getByte(endPos - i) != NEW_LINE_SEPARATOR) {
+                i++;
+            }
+            return endPos - i + 1;
+        }
 
-            long regionPtr;
+        private void doProcessRegion(long regionStart, long regionEnd) {
+//            final int vectorSize = BYTE_SPECIES.vectorByteSize();
+//            final long regionMainLimit = regionEnd - BYTE_SPECIES_SIZE;
+//
+//            long regionPtr;
+//
+//            // Read and process region - main
+//            for (regionPtr = regionStart; regionPtr < regionMainLimit;) {
+//                regionPtr = doProcessLine(regionPtr, vectorSize);
+//            }
+//
+//            // Read and process region - tail
+//            for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
+//                byte b = U.getByte(i);
+//                if (b == KEY_VALUE_SEPARATOR) {
+//                    int baseOffset = map.putKey(null, j, (int) (i - j));
+//                    i = extractValue(i + 1, map, baseOffset);
+//                    j = i;
+//                }
+//                else {
+//                    i++;
+//                }
+//            }
+
+            final int vectorSize = BYTE_SPECIES.vectorByteSize();
+            long size = regionEnd - regionStart;
+            final long segmentSize = size / 2;
+            long regionStartA = regionStart;
+            long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
+
+            long regionStartB = regionEndA;
+            long regionEndB = regionEnd;
+
+            long regionPtrA, regionPtrB;
 
             // Read and process region - main
-            for (regionPtr = regionStart; regionPtr < regionMainLimit;) {
-                // Find key/value separator
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                long keyStartPtr = regionPtr;
-
-                // Vectorized search for key/value separator
-                ByteVector keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr, NATIVE_BYTE_ORDER);
-
-                int keyLength = keyVector.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-                // Check whether key/value separator is found in the first vector (city name is <= vector size)
-                if (keyLength != vectorSize) {
-                    regionPtr += (keyLength + 1);
-                }
-                else {
-                    regionPtr += vectorSize;
-                    for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
-                        ;
-                    keyLength = (int) (regionPtr - keyStartPtr);
-                    regionPtr++;
-                    // I have tried vectorized search for key/value separator in the remaining part,
-                    // but since majority (99%) of the city names <= 16 bytes
-                    // and other a few longer city names (have length < 16 and <= 32) not close to 32 bytes,
-                    // byte by byte search is better in terms of performance (according to my experiments) and simplicity.
-                }
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-                // Put key and get map offset to put value
-                int entryOffset = map.putKey(keyVector, keyStartPtr, keyLength);
-
-                // Extract value, put it into map and return next position in the region to continue processing from there
-                regionPtr = extractValue(regionPtr, map, entryOffset);
-            }
-
-            // Read and process region - tail
-            for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
-                byte b = U.getByte(i);
-                if (b == KEY_VALUE_SEPARATOR) {
-                    int baseOffset = map.putKey(null, j, (int) (i - j));
-                    i = extractValue(i + 1, map, baseOffset);
-                    j = i;
-                }
-                else {
-                    i++;
-                }
+            for (regionPtrA = regionStartA, regionPtrB = regionStartB;
+                 regionPtrA < regionEndA && regionPtrB < regionEndB;) {
+                regionPtrA = doProcessLine(regionPtrA, vectorSize);
+                regionPtrB = doProcessLine(regionPtrB, vectorSize);
             }
         }
 
