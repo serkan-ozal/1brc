@@ -386,7 +386,7 @@ public class CalculateAverage_serkan_ozal {
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // Put key and get map offset to put value
-            long entryOffset = map.putKey(keyVector, keyStartPtr, keyLength);
+            int entryOffset = map.putKey(keyVector, keyStartPtr, keyLength);
 
             // Extract value, put it into map and return next position in the region to continue processing from there
             return extractValue(regionPtr, map, entryOffset);
@@ -394,7 +394,7 @@ public class CalculateAverage_serkan_ozal {
     }
 
     // Credits: merykitty
-    private static long extractValue(long regionPtr, OpenMap map, long entryOffset) {
+    private static long extractValue(long regionPtr, OpenMap map, int entryOffset) {
         long word = U.getLong(regionPtr);
         if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
             word = Long.reverseBytes(word);
@@ -586,13 +586,13 @@ public class CalculateAverage_serkan_ozal {
         private static final int KEY_ARRAY_OFFSET = KEY_OFFSET - Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
         private final byte[] data;
-        private final long[] entryOffsets;
+        private final int[] entryOffsets;
         private int entryOffsetIdx;
 
         private OpenMap() {
             this.data = new byte[MAP_SIZE];
             // Max number of unique keys are 10K, so 1 << 14 (16384) is long enough to hold offsets for all of them
-            this.entryOffsets = new long[1 << 14];
+            this.entryOffsets = new int[1 << 14];
             this.entryOffsetIdx = 0;
         }
 
@@ -612,7 +612,7 @@ public class CalculateAverage_serkan_ozal {
             return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
         }
 
-        private long putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
+        private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
             // Calculate hash of key
             int keyHash = calculateKeyHash(keyStartAddress, keyLength);
             // and get the position of the entry in the linear map based on calculated hash
@@ -689,18 +689,18 @@ public class CalculateAverage_serkan_ozal {
             return wordA == wordB;
         }
 
-        private void putValue(long entryOffset, int value) {
-            long countOffset = entryOffset + COUNT_OFFSET;
+        private void putValue(int entryOffset, int value) {
+            int countOffset = entryOffset + COUNT_OFFSET;
             U.putInt(data, countOffset, U.getInt(data, countOffset) + 1);
-            long minValueOffset = entryOffset + MIN_VALUE_OFFSET;
+            int minValueOffset = entryOffset + MIN_VALUE_OFFSET;
             if (value < U.getShort(data, minValueOffset)) {
                 U.putShort(data, minValueOffset, (short) value);
             }
-            long maxValueOffset = entryOffset + MAX_VALUE_OFFSET;
+            int maxValueOffset = entryOffset + MAX_VALUE_OFFSET;
             if (value > U.getShort(data, maxValueOffset)) {
                 U.putShort(data, maxValueOffset, (short) value);
             }
-            long sumOffset = entryOffset + VALUE_SUM_OFFSET;
+            int sumOffset = entryOffset + VALUE_SUM_OFFSET;
             U.putLong(data, sumOffset, U.getLong(data, sumOffset) + value);
         }
 
@@ -708,13 +708,13 @@ public class CalculateAverage_serkan_ozal {
             // Merge this local map into global result map
             Arrays.sort(entryOffsets, 0, entryOffsetIdx);
             for (int i = 0; i < entryOffsetIdx; i++) {
-                long entryOffset = entryOffsets[i];
+                int entryOffset = entryOffsets[i];
                 int keyLength = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
                 if (keyLength == 0) {
                     // No entry is available for this index, so continue iterating
                     continue;
                 }
-                int entryArrayIdx = (int) (entryOffset + KEY_OFFSET - Unsafe.ARRAY_BYTE_BASE_OFFSET);
+                int entryArrayIdx = entryOffset + KEY_OFFSET - Unsafe.ARRAY_BYTE_BASE_OFFSET;
                 String key = new String(data, entryArrayIdx, keyLength, StandardCharsets.UTF_8);
                 int count = U.getInt(data, entryOffset + COUNT_OFFSET);
                 short minValue = U.getShort(data, entryOffset + MIN_VALUE_OFFSET);
