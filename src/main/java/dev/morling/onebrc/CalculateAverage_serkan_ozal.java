@@ -290,7 +290,7 @@ public class CalculateAverage_serkan_ozal {
                     long regionStart = regionGiven ? (r.address() + task.start) : r.address();
                     long regionEnd = regionStart + task.size;
 
-                    doProcessRegion(r, r.address(), regionStart, regionEnd);
+                    doProcessRegion(regionStart, regionEnd);
                 }
 
                 if (VERBOSE) {
@@ -334,7 +334,7 @@ public class CalculateAverage_serkan_ozal {
             }
         }
 
-        private void doProcessRegion(MemorySegment region, long regionAddress, long regionStart, long regionEnd) {
+        private void doProcessRegion(long regionStart, long regionEnd) {
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
             final long regionMainLimit = regionEnd - BYTE_SPECIES_SIZE;
 
@@ -609,7 +609,7 @@ public class CalculateAverage_serkan_ozal {
                 x = U.getByte(address);
                 y = U.getByte(address + keyLength - Byte.BYTES);
             }
-            return (Integer.rotateLeft(x, rotate) ^ y) * seed;
+            return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
         }
 
         private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
