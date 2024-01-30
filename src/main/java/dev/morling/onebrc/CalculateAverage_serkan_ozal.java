@@ -416,28 +416,23 @@ public class CalculateAverage_serkan_ozal {
                 int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
                 int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
 
-                if (keyLength1 != vectorSize && keyLength2 != vectorSize) {
+                if (keyLength1 != vectorSize) {
                     regionPtr1 += (keyLength1 + 1);
+                } else {
+                    regionPtr1 += vectorSize;
+                    for (; U.getByte(regionPtr1) != KEY_VALUE_SEPARATOR; regionPtr1++)
+                        ;
+                    keyLength1 = (int) (regionPtr1 - keyStartPtr1);
+                    regionPtr1++;
+                }
+                if (keyLength2 != vectorSize) {
                     regionPtr2 += (keyLength2 + 1);
                 } else {
-                    if (keyLength1 != vectorSize) {
-                        regionPtr1 += (keyLength1 + 1);
-                    } else {
-                        regionPtr1 += vectorSize;
-                        for (; U.getByte(regionPtr1) != KEY_VALUE_SEPARATOR; regionPtr1++)
-                            ;
-                        keyLength1 = (int) (regionPtr1 - keyStartPtr1);
-                        regionPtr1++;
-                    }
-                    if (keyLength2 != vectorSize) {
-                        regionPtr2 += (keyLength2 + 1);
-                    } else {
-                        regionPtr2 += vectorSize;
-                        for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
-                            ;
-                        keyLength2 = (int) (regionPtr2 - keyStartPtr2);
-                        regionPtr2++;
-                    }
+                    regionPtr2 += vectorSize;
+                    for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
+                        ;
+                    keyLength2 = (int) (regionPtr2 - keyStartPtr2);
+                    regionPtr2++;
                 }
 
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
