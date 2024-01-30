@@ -464,42 +464,42 @@ public class CalculateAverage_serkan_ozal {
 //                regionPtr2 = doProcessLine(regionPtr2, vectorSize);
 //            }
 
-            for (long i = regionPtr1, j = regionPtr1; i < regionEnd1;) {
-                byte b = U.getByte(i);
-                if (b == KEY_VALUE_SEPARATOR) {
-                    int keyLength = (int) (i - j);
-                    int entryIdx = map.calculateEntryIndex(j, keyLength);
-                    int entryOffset = map.putKey(null, j, keyLength, entryIdx);
-                    long ptr = i + 1;
-                    long word = U.getLong(ptr);
-                    if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                        word = Long.reverseBytes(word);
-                    }
-                    i = extractValue(ptr, word, map, entryOffset);
-                    j = i;
-                }
-                else {
-                    i++;
-                }
-            }
-            for (long i = regionPtr2, j = regionPtr2; i < regionEnd2;) {
-                byte b = U.getByte(i);
-                if (b == KEY_VALUE_SEPARATOR) {
-                    int keyLength = (int) (i - j);
-                    int entryIdx = map.calculateEntryIndex(j, keyLength);
-                    int entryOffset = map.putKey(null, j, keyLength, entryIdx);
-                    long ptr = i + 1;
-                    long word = U.getLong(ptr);
-                    if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                        word = Long.reverseBytes(word);
-                    }
-                    i = extractValue(ptr, word, map, entryOffset);
-                    j = i;
-                }
-                else {
-                    i++;
-                }
-            }
+//            for (long i = regionPtr1, j = regionPtr1; i < regionEnd1;) {
+//                byte b = U.getByte(i);
+//                if (b == KEY_VALUE_SEPARATOR) {
+//                    int keyLength = (int) (i - j);
+//                    int entryIdx = map.calculateEntryIndex(j, keyLength);
+//                    int entryOffset = map.putKey(null, j, keyLength, entryIdx);
+//                    long ptr = i + 1;
+//                    long word = U.getLong(ptr);
+//                    if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+//                        word = Long.reverseBytes(word);
+//                    }
+//                    i = extractValue(ptr, word, map, entryOffset);
+//                    j = i;
+//                }
+//                else {
+//                    i++;
+//                }
+//            }
+//            for (long i = regionPtr2, j = regionPtr2; i < regionEnd2;) {
+//                byte b = U.getByte(i);
+//                if (b == KEY_VALUE_SEPARATOR) {
+//                    int keyLength = (int) (i - j);
+//                    int entryIdx = map.calculateEntryIndex(j, keyLength);
+//                    int entryOffset = map.putKey(null, j, keyLength, entryIdx);
+//                    long ptr = i + 1;
+//                    long word = U.getLong(ptr);
+//                    if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+//                        word = Long.reverseBytes(word);
+//                    }
+//                    i = extractValue(ptr, word, map, entryOffset);
+//                    j = i;
+//                }
+//                else {
+//                    i++;
+//                }
+//            }
         }
 
         private long doProcessLine(long regionPtr, int vectorSize) {
