@@ -349,8 +349,8 @@ public class CalculateAverage_serkan_ozal {
             for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
                 byte b = U.getByte(i);
                 if (b == KEY_VALUE_SEPARATOR) {
-                    long entryPtr = map.putKey(null, j, (int) (i - j));
-                    i = extractValue(i + 1, map, entryPtr);
+                    int entryOffset = map.putKey(null, j, (int) (i - j));
+                    i = extractValue(i + 1, map, entryOffset);
                     j = i;
                 }
                 else {
@@ -386,15 +386,15 @@ public class CalculateAverage_serkan_ozal {
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // Put key and get map offset to put value
-            long entryPtr = map.putKey(keyVector, keyStartPtr, keyLength);
+            int entryOffset = map.putKey(keyVector, keyStartPtr, keyLength);
 
             // Extract value, put it into map and return next position in the region to continue processing from there
-            return extractValue(regionPtr, map, entryPtr);
+            return extractValue(regionPtr, map, entryOffset);
         }
     }
 
     // Credits: merykitty
-    private static long extractValue(long regionPtr, OpenMap map, long entryPtr) {
+    private static long extractValue(long regionPtr, OpenMap map, int entryOffset) {
         long word = U.getLong(regionPtr);
         if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
             word = Long.reverseBytes(word);
@@ -410,7 +410,7 @@ public class CalculateAverage_serkan_ozal {
         int value = (int) ((absValue ^ signed) - signed);
 
         // Put extracted value into map
-        map.putValue(entryPtr, value);
+        map.putValue(entryOffset, value);
 
         // Return new position
         return regionPtr + (decimalSepPos >>> 3) + 3;
@@ -583,18 +583,19 @@ public class CalculateAverage_serkan_ozal {
         private static final int ENTRY_HASH_MASK = MAP_CAPACITY - 1;
         private static final int MAP_SIZE = ENTRY_SIZE * MAP_CAPACITY;
         private static final int ENTRY_MASK = MAP_SIZE - 1;
+        private static final int KEY_ARRAY_OFFSET = KEY_OFFSET - Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
-        private final long allocatedAddress;
-        private final long dataAddress;
-        private final long[] entryAddresses;
-        private int entryAddressIdx;
+        private final byte[] data;
+        private final MemorySegment dataMemorySegment;
+        private final int[] entryOffsets;
+        private int entryOffsetIdx;
 
         private OpenMap() {
-            this.allocatedAddress = U.allocateMemory(MAP_SIZE + 4096);
-            this.dataAddress = (this.allocatedAddress + 4095) & (~4095);
+            this.data = new byte[MAP_SIZE];
+            this.dataMemorySegment = MemorySegment.ofArray(this.data);
             // Max number of unique keys are 10K, so 1 << 14 (16384) is long enough to hold offsets for all of them
-            this.entryAddresses = new long[1 << 14];
-            this.entryAddressIdx = 0;
+            this.entryOffsets = new int[1 << 14];
+            this.entryOffsetIdx = 0;
         }
 
         // Credits: merykitty
@@ -613,7 +614,7 @@ public class CalculateAverage_serkan_ozal {
             return (Integer.rotateLeft(x * SEED, ROTATE) ^ y) * SEED;
         }
 
-        private long putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
+        private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
             // Calculate hash of key
             int keyHash = calculateKeyHash(keyStartAddress, keyLength);
             // and get the position of the entry in the linear map based on calculated hash
@@ -622,33 +623,33 @@ public class CalculateAverage_serkan_ozal {
             // Start searching from the calculated position
             // and continue until find an available slot in case of hash collision
             // TODO Prevent infinite loop if all the slots are in use for other keys
-            for (long entryPtr = dataAddress + idx;; entryPtr = (entryPtr + ENTRY_SIZE)) {
-                long keySize = U.getInt(entryPtr + KEY_SIZE_OFFSET);
+            for (int entryOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + idx;; entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK) {
+                int keySize = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
                 // Check whether current index is empty (no another key is inserted yet)
                 if (keySize == 0) {
                     // Initialize entry slot for new key
-                    U.putShort(entryPtr + MIN_VALUE_OFFSET, Short.MAX_VALUE);
-                    U.putShort(entryPtr + MAX_VALUE_OFFSET, Short.MIN_VALUE);
-                    U.putInt(entryPtr + KEY_SIZE_OFFSET, keyLength);
-                    U.copyMemory(keyStartAddress, entryPtr + KEY_OFFSET, keyLength);
-                    entryAddresses[entryAddressIdx++] = entryPtr;
-                    return entryPtr;
+                    U.putShort(data, entryOffset + MIN_VALUE_OFFSET, Short.MAX_VALUE);
+                    U.putShort(data, entryOffset + MAX_VALUE_OFFSET, Short.MIN_VALUE);
+                    U.putInt(data, entryOffset + KEY_SIZE_OFFSET, keyLength);
+                    U.copyMemory(null, keyStartAddress, data, entryOffset + KEY_OFFSET, keyLength);
+                    entryOffsets[entryOffsetIdx++] = entryOffset;
+                    return entryOffset;
                 }
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryPtr + KEY_OFFSET)) {
-                    return entryPtr;
+                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
+                    return entryOffset;
                 }
             }
         }
 
-        private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, long entryKeyPtr) {
+        private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, int keyStartArrayOffset) {
             if (keyVector != null) {
                 // Use vectorized search for the comparison of keys.
                 // Since majority of the city names >= 8 bytes and <= 16 bytes,
                 // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
-                ByteVector entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, entryKeyPtr, NATIVE_BYTE_ORDER);
+                ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
                 int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
                 if (eqCount == keyLength) {
                     return true;
@@ -660,59 +661,66 @@ public class CalculateAverage_serkan_ozal {
 
             // Compare remaining parts of the keys
 
-            int alignedKeyLength = keyLength & 0xFFFFFFF8;
+            int keyCheckIdx = keyVector != null ? BYTE_SPECIES_SIZE : 0;
+
+            int normalizedKeyLength = keyLength;
+            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+                normalizedKeyLength = Integer.reverseBytes(normalizedKeyLength);
+            }
+
+            long keyStartOffset = keyStartArrayOffset + Unsafe.ARRAY_BYTE_BASE_OFFSET;
+            int alignedKeyLength = normalizedKeyLength & 0xFFFFFFF8;
             int i;
-            for (i = 0; i < alignedKeyLength; i += Long.BYTES) {
-                if (U.getLong(keyStartAddress + i) != U.getLong(entryKeyPtr + i)) {
+            for (i = keyCheckIdx; i < alignedKeyLength; i += Long.BYTES) {
+                if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
                     return false;
                 }
             }
 
             long wordA = U.getLong(keyStartAddress + i);
-            long wordB = U.getLong(entryKeyPtr + i);
+            long wordB = U.getLong(data, keyStartOffset + i);
             if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
                 wordA = Long.reverseBytes(wordA);
                 wordB = Long.reverseBytes(wordB);
             }
-            int halfShift = (Long.BYTES - (keyLength & 0x00000007)) << 2;
+            int halfShift = (Long.BYTES - (normalizedKeyLength & 0x00000007)) << 2;
             long mask = (0xFFFFFFFFFFFFFFFFL >>> halfShift) >> halfShift;
             wordA = wordA & mask;
             // No need to mask "wordB" (word from key in the map), because it is already padded with 0s
             return wordA == wordB;
         }
 
-        private void putValue(long entryAddress, int value) {
-            long countAddress = entryAddress + COUNT_OFFSET;
-            U.putInt(countAddress, U.getInt(countAddress) + 1);
-            long minValueAddress = entryAddress + MIN_VALUE_OFFSET;
-            if (value < U.getShort(minValueAddress)) {
-                U.putShort(minValueAddress, (short) value);
+        private void putValue(int entryOffset, int value) {
+            int countOffset = entryOffset + COUNT_OFFSET;
+            U.putInt(data, countOffset, U.getInt(data, countOffset) + 1);
+            int minValueOffset = entryOffset + MIN_VALUE_OFFSET;
+            if (value < U.getShort(data, minValueOffset)) {
+                U.putShort(data, minValueOffset, (short) value);
             }
-            long maxValueAddress = entryAddress + MAX_VALUE_OFFSET;
-            if (value > U.getShort(maxValueAddress)) {
-                U.putShort(maxValueAddress, (short) value);
+            int maxValueOffset = entryOffset + MAX_VALUE_OFFSET;
+            if (value > U.getShort(data, maxValueOffset)) {
+                U.putShort(data, maxValueOffset, (short) value);
             }
-            long sumAddress = entryAddress + VALUE_SUM_OFFSET;
-            U.putLong(sumAddress, U.getLong(sumAddress) + value);
+            int sumOffset = entryOffset + VALUE_SUM_OFFSET;
+            U.putLong(data, sumOffset, U.getLong(data, sumOffset) + value);
         }
 
         private void merge(Map<String, KeyResult> resultMap) {
             // Merge this local map into global result map
-            Arrays.sort(entryAddresses, 0, entryAddressIdx);
-            for (int i = 0; i < entryAddressIdx; i++) {
-                long entryPtr = entryAddresses[i];
-                int keyLength = U.getInt(entryPtr + KEY_SIZE_OFFSET);
+            Arrays.sort(entryOffsets, 0, entryOffsetIdx);
+            for (int i = 0; i < entryOffsetIdx; i++) {
+                int entryOffset = entryOffsets[i];
+                int keyLength = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
                 if (keyLength == 0) {
                     // No entry is available for this index, so continue iterating
                     continue;
                 }
-                byte[] keyBytes = new byte[keyLength];
-                U.copyMemory(null, entryPtr + KEY_OFFSET, keyBytes, Unsafe.ARRAY_BYTE_BASE_OFFSET, keyLength);
-                String key = new String(keyBytes, StandardCharsets.UTF_8);
-                int count = U.getInt(entryPtr + COUNT_OFFSET);
-                short minValue = U.getShort(entryPtr + MIN_VALUE_OFFSET);
-                short maxValue = U.getShort(entryPtr + MAX_VALUE_OFFSET);
-                long sum = U.getLong(entryPtr + VALUE_SUM_OFFSET);
+                int entryArrayIdx = (entryOffset + KEY_OFFSET - Unsafe.ARRAY_BYTE_BASE_OFFSET);
+                String key = new String(data, entryArrayIdx, keyLength, StandardCharsets.UTF_8);
+                int count = U.getInt(data, entryOffset + COUNT_OFFSET);
+                short minValue = U.getShort(data, entryOffset + MIN_VALUE_OFFSET);
+                short maxValue = U.getShort(data, entryOffset + MAX_VALUE_OFFSET);
+                long sum = U.getLong(data, entryOffset + VALUE_SUM_OFFSET);
                 KeyResult result = new KeyResult(count, minValue, maxValue, sum);
                 KeyResult existingResult = resultMap.get(key);
                 if (existingResult == null) {
