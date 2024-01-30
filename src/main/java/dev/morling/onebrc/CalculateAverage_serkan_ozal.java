@@ -16,7 +16,6 @@
 package dev.morling.onebrc;
 
 import jdk.incubator.vector.ByteVector;
-import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 import sun.misc.Unsafe;
@@ -60,7 +59,7 @@ public class CalculateAverage_serkan_ozal {
             ? ByteVector.SPECIES_128
             : ByteVector.SPECIES_64;
     private static final int BYTE_SPECIES_SIZE = BYTE_SPECIES.vectorByteSize();
-    private static final MemorySegment ALL = MemorySegment.NULL.reinterpret(Long.MAX_VALUE);
+    private static final MemorySegment NULL = MemorySegment.NULL.reinterpret(Long.MAX_VALUE);
     private static final ByteOrder NATIVE_BYTE_ORDER = ByteOrder.nativeOrder();
 
     private static final char NEW_LINE_SEPARATOR = '\n';
@@ -343,6 +342,24 @@ public class CalculateAverage_serkan_ozal {
             return endPos - i + 1;
         }
 
+        // Credits: merykitty
+        private long extractValue(long regionPtr, long word, OpenMap map, int entryOffset) {
+            // Parse and extract value
+            int decimalSepPos = Long.numberOfTrailingZeros(~word & 0x10101000);
+            int shift = 28 - decimalSepPos;
+            long signed = (~word << 59) >> 63;
+            long designMask = ~(signed & 0xFF);
+            long digits = ((word & designMask) << shift) & 0x0F000F0F00L;
+            long absValue = ((digits * 0x640a0001) >>> 32) & 0x3FF;
+            int value = (int) ((absValue ^ signed) - signed);
+
+            // Put extracted value into map
+            map.putValue(entryOffset, value);
+
+            // Return new position
+            return regionPtr + (decimalSepPos >>> 3) + 3;
+        }
+
         private void doProcessRegion(long regionStart, long regionEnd) {
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
 
@@ -358,6 +375,10 @@ public class CalculateAverage_serkan_ozal {
             long regionPtr1, regionPtr2;
 
             // Read and process region - main
+            // Inspired by: @jerrinot
+            // - two lines at a time (according to my experiment, this is optimum value in terms of register spilling)
+            // - most of the implementation is inlined
+            // - so get the benefit of ILP (Instruction Level Parallelism) better
             for (regionPtr1 = regionStart1, regionPtr2 = regionStart2;
                  regionPtr1 < regionEnd1 && regionPtr2 < regionEnd2;) {
                 // Search key/value separators and find keys' start and end positions
@@ -365,8 +386,8 @@ public class CalculateAverage_serkan_ozal {
                 long keyStartPtr1 = regionPtr1;
                 long keyStartPtr2 = regionPtr2;
 
-                ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr1, NATIVE_BYTE_ORDER);
-                ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr2, NATIVE_BYTE_ORDER);
+                ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr1, NATIVE_BYTE_ORDER);
+                ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr2, NATIVE_BYTE_ORDER);
 
                 int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
                 int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
@@ -440,12 +461,6 @@ public class CalculateAverage_serkan_ozal {
                 int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//                int entryIdx1 = map.calculateEntryIndex(keyStartPtr1, keyLength1);
-//                int entryIdx2 = map.calculateEntryIndex(keyStartPtr2, keyLength2);
-//
-//                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
-//                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
-
                 // Extract values by parsing and put them into map
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
                 long word1 = U.getLong(regionPtr1);
@@ -460,21 +475,14 @@ public class CalculateAverage_serkan_ozal {
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
 
-            doProcessTail(regionPtr1, regionEnd1, regionPtr2, regionEnd2, vectorSize);
-
             // Read and process region - tail
-//            while (regionPtr1 < regionEnd1) {
-//                regionPtr1 = doProcessLine(regionPtr1, vectorSize);
-//            }
-//            while (regionPtr2 < regionEnd2) {
-//                regionPtr2 = doProcessLine(regionPtr2, vectorSize);
-//            }
+            doProcessTail(regionPtr1, regionEnd1, regionPtr2, regionEnd2, vectorSize);
         }
 
         private void doProcessTail(long regionPtr1, long regionEnd1, long regionPtr2, long regionEnd2, int vectorSize) {
             while (regionPtr1 < regionEnd1) {
                 long keyStartPtr1 = regionPtr1;
-                ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr1, NATIVE_BYTE_ORDER);
+                ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr1, NATIVE_BYTE_ORDER);
                 int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
                 if (keyLength1 != vectorSize) {
                     regionPtr1 += (keyLength1 + 1);
@@ -496,7 +504,7 @@ public class CalculateAverage_serkan_ozal {
             }
             while (regionPtr2 < regionEnd2) {
                 long keyStartPtr2 = regionPtr2;
-                ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr2, NATIVE_BYTE_ORDER);
+                ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr2, NATIVE_BYTE_ORDER);
                 int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
                 if (keyLength2 != vectorSize) {
                     regionPtr2 += (keyLength2 + 1);
@@ -516,105 +524,8 @@ public class CalculateAverage_serkan_ozal {
                 }
                 regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
             }
-
-
-
-//            for (long i = regionPtr1, j = regionPtr1; i < regionEnd1;) {
-//                byte b = U.getByte(i);
-//                if (b == KEY_VALUE_SEPARATOR) {
-//                    int keyLength = (int) (i - j);
-//                    int entryIdx = map.calculateEntryIndex(j, keyLength);
-//                    int entryOffset = map.putKey(null, j, keyLength, entryIdx);
-//                    long ptr = i + 1;
-//                    long word = U.getLong(ptr);
-//                    if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-//                        word = Long.reverseBytes(word);
-//                    }
-//                    i = extractValue(ptr, word, map, entryOffset);
-//                    j = i;
-//                }
-//                else {
-//                    i++;
-//                }
-//            }
-//            for (long i = regionPtr2, j = regionPtr2; i < regionEnd2;) {
-//                byte b = U.getByte(i);
-//                if (b == KEY_VALUE_SEPARATOR) {
-//                    int keyLength = (int) (i - j);
-//                    int entryIdx = map.calculateEntryIndex(j, keyLength);
-//                    int entryOffset = map.putKey(null, j, keyLength, entryIdx);
-//                    long ptr = i + 1;
-//                    long word = U.getLong(ptr);
-//                    if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-//                        word = Long.reverseBytes(word);
-//                    }
-//                    i = extractValue(ptr, word, map, entryOffset);
-//                    j = i;
-//                }
-//                else {
-//                    i++;
-//                }
-//            }
         }
 
-        private long doProcessLine(long regionPtr, int vectorSize) {
-            // Find key/value separator
-            ////////////////////////////////////////////////////////////////////////////////////////////////////////
-            long keyStartPtr = regionPtr;
-
-            // Vectorized search for key/value separator
-            ByteVector keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr, NATIVE_BYTE_ORDER);
-
-            int keyLength = keyVector.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-            // Check whether key/value separator is found in the first vector (city name is <= vector size)
-            if (keyLength != vectorSize) {
-                regionPtr += (keyLength + 1);
-            }
-            else {
-                regionPtr += vectorSize;
-                for (; U.getByte(regionPtr) != KEY_VALUE_SEPARATOR; regionPtr++)
-                    ;
-                keyLength = (int) (regionPtr - keyStartPtr);
-                regionPtr++;
-                // I have tried vectorized search for key/value separator in the remaining part,
-                // but since majority (99%) of the city names <= 16 bytes
-                // and other a few longer city names (have length < 16 and <= 32) not close to 32 bytes,
-                // byte by byte search is better in terms of performance (according to my experiments) and simplicity.
-            }
-            ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-            // Calculate entry index
-            int entryIdx = map.calculateEntryIndex(keyStartPtr, keyLength);
-
-            // Put key and get map offset to put value
-            int entryOffset = map.putKey(keyVector, keyStartPtr, keyLength, entryIdx);
-
-            long word = U.getLong(regionPtr);
-            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                word = Long.reverseBytes(word);
-            }
-
-            // Extract value, put it into map and return next position in the region to continue processing from there
-            return extractValue(regionPtr, word, map, entryOffset);
-        }
-    }
-
-    // Credits: merykitty
-    private static long extractValue(long regionPtr, long word, OpenMap map, int entryOffset) {
-        // Parse and extract value
-        int decimalSepPos = Long.numberOfTrailingZeros(~word & 0x10101000);
-        int shift = 28 - decimalSepPos;
-        long signed = (~word << 59) >> 63;
-        long designMask = ~(signed & 0xFF);
-        long digits = ((word & designMask) << shift) & 0x0F000F0F00L;
-        long absValue = ((digits * 0x640a0001) >>> 32) & 0x3FF;
-        int value = (int) ((absValue ^ signed) - signed);
-
-        // Put extracted value into map
-        map.putValue(entryOffset, value);
-
-        // Return new position
-        return regionPtr + (decimalSepPos >>> 3) + 3;
     }
 
     /**
