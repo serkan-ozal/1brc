@@ -363,7 +363,7 @@ public class CalculateAverage_serkan_ozal {
         private void extractValue(OpenMap map,
                                   long word1, int decimalSepPos1, int entryOffset1,
                                   long word2, int decimalSepPos2, int entryOffset2) {
-            // Parse and extract value
+            // Parse and extract values
             int shift1 = 28 - decimalSepPos1;
             int shift2 = 28 - decimalSepPos2;
             long signed1 = (~word1 << 59) >> 63;
@@ -377,9 +377,8 @@ public class CalculateAverage_serkan_ozal {
             int value1 = (int) ((absValue1 ^ signed1) - signed1);
             int value2 = (int) ((absValue2 ^ signed2) - signed2);
 
-            // Put extracted value into map
-            map.putValue(entryOffset1, value1);
-            map.putValue(entryOffset2, value2);
+            // Put extracted values into map
+            map.putValues(entryOffset1, value1, entryOffset2, value2);
         }
 
         private void doProcessRegion(long regionStart, long regionEnd) {
@@ -840,6 +839,33 @@ public class CalculateAverage_serkan_ozal {
             }
             int sumOffset = entryOffset + VALUE_SUM_OFFSET;
             U.putLong(data, sumOffset, U.getLong(data, sumOffset) + value);
+        }
+
+        private void putValues(int entryOffset1, int value1, int entryOffset2, int value2) {
+            int countOffset1 = entryOffset1 + COUNT_OFFSET;
+            int countOffset2 = entryOffset2 + COUNT_OFFSET;
+            U.putInt(data, countOffset1, U.getInt(data, countOffset1) + 1);
+            U.putInt(data, countOffset2, U.getInt(data, countOffset2) + 1);
+            int minValueOffset1 = entryOffset1 + MIN_VALUE_OFFSET;
+            int minValueOffset2 = entryOffset2 + MIN_VALUE_OFFSET;
+            if (value1 < U.getShort(data, minValueOffset1)) {
+                U.putShort(data, minValueOffset1, (short) value1);
+            }
+            if (value2 < U.getShort(data, minValueOffset2)) {
+                U.putShort(data, minValueOffset2, (short) value2);
+            }
+            int maxValueOffset1 = entryOffset1 + MAX_VALUE_OFFSET;
+            int maxValueOffset2 = entryOffset2 + MAX_VALUE_OFFSET;
+            if (value1 > U.getShort(data, maxValueOffset1)) {
+                U.putShort(data, maxValueOffset1, (short) value1);
+            }
+            if (value2 > U.getShort(data, maxValueOffset2)) {
+                U.putShort(data, maxValueOffset2, (short) value2);
+            }
+            int sumOffset1 = entryOffset1 + VALUE_SUM_OFFSET;
+            int sumOffset2 = entryOffset2 + VALUE_SUM_OFFSET;
+            U.putLong(data, sumOffset1, U.getLong(data, sumOffset1) + value1);
+            U.putLong(data, sumOffset2, U.getLong(data, sumOffset2) + value2);
         }
 
         private void merge(Map<String, KeyResult> resultMap) {
