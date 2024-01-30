@@ -349,7 +349,7 @@ public class CalculateAverage_serkan_ozal {
             for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
                 byte b = U.getByte(i);
                 if (b == KEY_VALUE_SEPARATOR) {
-                    int entryOffset = map.putKey(null, j, (int) (i - j));
+                    int entryOffset = map.putKey(j, (int) (i - j));
                     i = extractValue(i + 1, map, entryOffset);
                     j = i;
                 }
@@ -386,7 +386,7 @@ public class CalculateAverage_serkan_ozal {
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // Put key and get map offset to put value
-            int entryOffset = map.putKey(keyVector, keyStartPtr, keyLength);
+            int entryOffset = map.putKey(keyStartPtr, keyLength);
 
             // Extract value, put it into map and return next position in the region to continue processing from there
             return extractValue(regionPtr, map, entryOffset);
@@ -586,13 +586,11 @@ public class CalculateAverage_serkan_ozal {
         private static final int KEY_ARRAY_OFFSET = KEY_OFFSET - Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
         private final byte[] data;
-        private final MemorySegment dataMemorySegment;
         private final int[] entryOffsets;
         private int entryOffsetIdx;
 
         private OpenMap() {
             this.data = new byte[MAP_SIZE];
-            this.dataMemorySegment = MemorySegment.ofArray(this.data);
             // Max number of unique keys are 10K, so 1 << 14 (16384) is long enough to hold offsets for all of them
             this.entryOffsets = new int[1 << 14];
             this.entryOffsetIdx = 0;
@@ -614,7 +612,7 @@ public class CalculateAverage_serkan_ozal {
             return (Integer.rotateLeft(x * SEED, ROTATE) ^ y) * SEED;
         }
 
-        private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
+        private int putKey(long keyStartAddress, int keyLength) {
             // Calculate hash of key
             int keyHash = calculateKeyHash(keyStartAddress, keyLength);
             // and get the position of the entry in the linear map based on calculated hash
@@ -638,30 +636,26 @@ public class CalculateAverage_serkan_ozal {
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
+                if (keySize == keyLength && keysEqual(keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
                     return entryOffset;
                 }
             }
         }
 
-        private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, int keyStartArrayOffset) {
-            if (keyVector != null) {
-                // Use vectorized search for the comparison of keys.
-                // Since majority of the city names >= 8 bytes and <= 16 bytes,
-                // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
-                ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
-                int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
-                if (eqCount == keyLength) {
-                    return true;
-                }
-                else if (keyLength <= BYTE_SPECIES_SIZE) {
-                    return false;
-                }
+        private boolean keysEqual(long keyStartAddress, int keyLength, int keyStartArrayOffset) {
+            // Use vectorized search for the comparison of keys.
+            // Since majority of the city names >= 8 bytes and <= 16 bytes,
+            // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
+            ByteVector keyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, keyStartAddress, NATIVE_BYTE_ORDER);
+            ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
+            int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
+            if (eqCount == keyLength) {
+                return true;
             }
-
+            else if (keyLength <= BYTE_SPECIES_SIZE) {
+                return false;
+            }
             // Compare remaining parts of the keys
-
-            int keyCheckIdx = keyVector != null ? BYTE_SPECIES_SIZE : 0;
 
             int normalizedKeyLength = keyLength;
             if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
@@ -671,7 +665,7 @@ public class CalculateAverage_serkan_ozal {
             long keyStartOffset = keyStartArrayOffset + Unsafe.ARRAY_BYTE_BASE_OFFSET;
             int alignedKeyLength = normalizedKeyLength & 0xFFFFFFF8;
             int i;
-            for (i = keyCheckIdx; i < alignedKeyLength; i += Long.BYTES) {
+            for (i = BYTE_SPECIES_SIZE; i < alignedKeyLength; i += Long.BYTES) {
                 if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
                     return false;
                 }
