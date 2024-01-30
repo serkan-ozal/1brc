@@ -586,11 +586,13 @@ public class CalculateAverage_serkan_ozal {
         private static final int KEY_ARRAY_OFFSET = KEY_OFFSET - Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
         private final byte[] data;
+        private final MemorySegment dataMemorySegment;
         private final int[] entryOffsets;
         private int entryOffsetIdx;
 
         private OpenMap() {
             this.data = new byte[MAP_SIZE];
+            this.dataMemorySegment = MemorySegment.ofArray(this.data);
             // Max number of unique keys are 10K, so 1 << 14 (16384) is long enough to hold offsets for all of them
             this.entryOffsets = new int[1 << 14];
             this.entryOffsetIdx = 0;
@@ -647,7 +649,8 @@ public class CalculateAverage_serkan_ozal {
                 // Use vectorized search for the comparison of keys.
                 // Since majority of the city names >= 8 bytes and <= 16 bytes,
                 // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
-                ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
+                ByteVector entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, dataMemorySegment, keyStartArrayOffset, NATIVE_BYTE_ORDER);
+                // ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
                 int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
                 if (eqCount == keyLength) {
                     return true;
