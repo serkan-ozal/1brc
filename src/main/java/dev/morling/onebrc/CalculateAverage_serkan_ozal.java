@@ -397,7 +397,7 @@ public class CalculateAverage_serkan_ozal {
             final int rotate = 5;
 
             final long size = regionEnd - regionStart;
-            final long segmentSize = size / 3;
+            final long segmentSize = size / 2;
 
             final long regionStartA = regionStart;
             final long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
