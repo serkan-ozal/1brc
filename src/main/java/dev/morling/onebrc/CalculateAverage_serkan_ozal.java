@@ -492,8 +492,20 @@ public class CalculateAverage_serkan_ozal {
                     word2 = Long.reverseBytes(word2);
                 }
 
-                regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
-                regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
+//                regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
+//                regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
+
+                int decimalSepPos1 = Long.numberOfTrailingZeros(~word1 & 0x10101000);
+                int decimalSepPos2 = Long.numberOfTrailingZeros(~word2 & 0x10101000);
+
+                int value1 = extractValue(word1, decimalSepPos1);
+                int value2 = extractValue(word2, decimalSepPos2);
+
+                regionPtr1 = regionPtr1 + (decimalSepPos1 >>> 3) + 3;
+                regionPtr2 = regionPtr2 + (decimalSepPos2 >>> 3) + 3;
+
+                map.putValue(entryOffset1, value1);
+                map.putValue(entryOffset2, value2);
             }
         }
 
@@ -530,6 +542,16 @@ public class CalculateAverage_serkan_ozal {
 //            return extractValue(regionPtr, map, entryOffset);
 //        }
 
+    }
+
+    private static int extractValue(long word, int decimalSepPos) {
+        // Parse and extract value
+        int shift = 28 - decimalSepPos;
+        long signed = (~word << 59) >> 63;
+        long designMask = ~(signed & 0xFF);
+        long digits = ((word & designMask) << shift) & 0x0F000F0F00L;
+        long absValue = ((digits * 0x640a0001) >>> 32) & 0x3FF;
+        return (int) ((absValue ^ signed) - signed);
     }
 
     // Credits: merykitty
