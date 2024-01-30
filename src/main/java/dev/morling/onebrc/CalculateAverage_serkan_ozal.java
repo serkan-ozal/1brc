@@ -16,6 +16,7 @@
 package dev.morling.onebrc;
 
 import jdk.incubator.vector.ByteVector;
+import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 import sun.misc.Unsafe;
@@ -413,8 +414,11 @@ public class CalculateAverage_serkan_ozal {
                 ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr1, NATIVE_BYTE_ORDER);
                 ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr2, NATIVE_BYTE_ORDER);
 
-                int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-                int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
+                VectorMask<Byte> keyVectorMask1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR);
+                VectorMask<Byte> keyVectorMask2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR);
+
+                int keyLength1 = keyVectorMask1.firstTrue();
+                int keyLength2 = keyVectorMask2.firstTrue();
 
                 if (keyLength1 != vectorSize && keyLength2 != vectorSize) {
                     regionPtr1 += (keyLength1 + 1);
