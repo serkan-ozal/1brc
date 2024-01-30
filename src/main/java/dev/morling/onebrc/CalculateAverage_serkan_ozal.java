@@ -401,50 +401,50 @@ public class CalculateAverage_serkan_ozal {
 
                 // Calculate key hashes and find entry indexes
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                int x1, y1, x2, y2;
-//                if (keyLength1 >= Integer.BYTES && keyLength2 >= Integer.BYTES) {
-//                    x1 = U.getInt(keyStartPtr1);
-//                    y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
-//                    x2 = U.getInt(keyStartPtr2);
-//                    y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
-//                }
-//                else {
-//                    if (keyLength1 >= Integer.BYTES) {
-//                        x1 = U.getInt(keyStartPtr1);
-//                        y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
-//                    }
-//                    else {
-//                        x1 = U.getByte(keyStartPtr1);
-//                        y1 = U.getByte(keyStartPtr1 + keyLength1 - Byte.BYTES);
-//                    }
-//                    if (keyLength2 >= Integer.BYTES) {
-//                        x2 = U.getInt(keyStartPtr2);
-//                        y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
-//                    }
-//                    else {
-//                        x2 = U.getByte(keyStartPtr2);
-//                        y2 = U.getByte(keyStartPtr2 + keyLength2 - Byte.BYTES);
-//                    }
-//                }
-//
-//                int keyHash1 = (Integer.rotateLeft(x1 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y1) * OpenMap.HASH_SEED;
-//                int keyHash2 = (Integer.rotateLeft(x2 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y2) * OpenMap.HASH_SEED;
-//
-//                int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
-//                int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
-//                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//                // Put keys and calculate entry offsets to put values
-//                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
-//                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
-//                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                int x1, y1, x2, y2;
+                if (keyLength1 >= Integer.BYTES && keyLength2 >= Integer.BYTES) {
+                    x1 = U.getInt(keyStartPtr1);
+                    y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
+                    x2 = U.getInt(keyStartPtr2);
+                    y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
+                }
+                else {
+                    if (keyLength1 >= Integer.BYTES) {
+                        x1 = U.getInt(keyStartPtr1);
+                        y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
+                    }
+                    else {
+                        x1 = U.getByte(keyStartPtr1);
+                        y1 = U.getByte(keyStartPtr1 + keyLength1 - Byte.BYTES);
+                    }
+                    if (keyLength2 >= Integer.BYTES) {
+                        x2 = U.getInt(keyStartPtr2);
+                        y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
+                    }
+                    else {
+                        x2 = U.getByte(keyStartPtr2);
+                        y2 = U.getByte(keyStartPtr2 + keyLength2 - Byte.BYTES);
+                    }
+                }
 
-                int entryIdx1 = map.calculateEntryIndex(keyStartPtr1, keyLength1);
-                int entryIdx2 = map.calculateEntryIndex(keyStartPtr2, keyLength2);
+                int keyHash1 = (Integer.rotateLeft(x1 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y1) * OpenMap.HASH_SEED;
+                int keyHash2 = (Integer.rotateLeft(x2 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y2) * OpenMap.HASH_SEED;
 
+                int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
+                int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                // Put keys and calculate entry offsets to put values
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
                 int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
                 int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//                int entryIdx1 = map.calculateEntryIndex(keyStartPtr1, keyLength1);
+//                int entryIdx2 = map.calculateEntryIndex(keyStartPtr2, keyLength2);
+//
+//                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+//                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
 
                 // Extract values by parsing and put them into map
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
