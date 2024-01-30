@@ -393,6 +393,9 @@ public class CalculateAverage_serkan_ozal {
 //                regionPtrB = doProcessLine(regionPtrB, vectorSize);
 //            }
 
+            final int seed = 0x9E3779B9;
+            final int rotate = 5;
+
             final long size = regionEnd - regionStart;
             final long segmentSize = size / 3;
 
@@ -400,27 +403,21 @@ public class CalculateAverage_serkan_ozal {
             final long regionEndA = findClosestLineEnd(regionStartA + segmentSize);
 
             final long regionStartB = regionEndA;
-            final long regionEndB = findClosestLineEnd(regionStartB + segmentSize);
+            final long regionEndB = regionEnd;
 
-            final long regionStartC = regionEndB;
-            final long regionEndC = regionEnd;
-
-            long regionPtr1, regionPtr2, regionPtr3;
+            long regionPtr1, regionPtr2;
 
             // Read and process region - main
-            for (regionPtr1 = regionStartA, regionPtr2 = regionStartB, regionPtr3 = regionStartC;
-                 regionPtr1 < regionEndA && regionPtr2 < regionEndB && regionPtr3 < regionEndC;) {
+            for (regionPtr1 = regionStartA, regionPtr2 = regionStartB;
+                 regionPtr1 < regionEndA && regionPtr2 < regionEndB;) {
                 long keyStartPtr1 = regionPtr1;
                 long keyStartPtr2 = regionPtr2;
-                long keyStartPtr3 = regionPtr3;
 
                 ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr1, NATIVE_BYTE_ORDER);
                 ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr2, NATIVE_BYTE_ORDER);
-                ByteVector keyVector3 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr3, NATIVE_BYTE_ORDER);
 
                 int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
                 int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-                int keyLength3 = keyVector3.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
 
                 if (keyLength1 != vectorSize) {
                     regionPtr1 += (keyLength1 + 1);
@@ -440,78 +437,53 @@ public class CalculateAverage_serkan_ozal {
                     keyLength2 = (int) (regionPtr2 - keyStartPtr2);
                     regionPtr2++;
                 }
-                if (keyLength3 != vectorSize) {
-                    regionPtr3 += (keyLength3 + 1);
-                } else {
-                    regionPtr3 += vectorSize;
-                    for (; U.getByte(regionPtr3) != KEY_VALUE_SEPARATOR; regionPtr3++)
-                        ;
-                    keyLength3 = (int) (regionPtr3 - keyStartPtr3);
-                    regionPtr3++;
-                }
 
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                int seed = 0x9E3779B9;
-                int rotate = 5;
+//                int x1, y1;
+//                if (keyLength1 >= Integer.BYTES) {
+//                    x1 = U.getInt(keyStartPtr1);
+//                    y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
+//                }
+//                else {
+//                    x1 = U.getByte(keyStartPtr1);
+//                    y1 = U.getByte(keyStartPtr1 + keyLength1 - Byte.BYTES);
+//                }
+//                int x2, y2;
+//                if (keyLength2 >= Integer.BYTES) {
+//                    x2 = U.getInt(keyStartPtr2);
+//                    y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
+//                }
+//                else {
+//                    x2 = U.getByte(keyStartPtr2);
+//                    y2 = U.getByte(keyStartPtr2 + keyLength2 - Byte.BYTES);
+//                }
+//
+//                int keyHash1 = (Integer.rotateLeft(x1 * seed, rotate) ^ y1) * seed;
+//                int keyHash2 = (Integer.rotateLeft(x2 * seed, rotate) ^ y2) * seed;
+//
+//                int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
+//                int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
 
-                int x1, y1;
-                if (keyLength1 >= Integer.BYTES) {
-                    x1 = U.getInt(keyStartPtr1);
-                    y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
-                }
-                else {
-                    x1 = U.getByte(keyStartPtr1);
-                    y1 = U.getByte(keyStartPtr1 + keyLength1 - Byte.BYTES);
-                }
-                int x2, y2;
-                if (keyLength2 >= Integer.BYTES) {
-                    x2 = U.getInt(keyStartPtr2);
-                    y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
-                }
-                else {
-                    x2 = U.getByte(keyStartPtr2);
-                    y2 = U.getByte(keyStartPtr2 + keyLength2 - Byte.BYTES);
-                }
-                int x3, y3;
-                if (keyLength3 >= Integer.BYTES) {
-                    x3 = U.getInt(keyStartPtr3);
-                    y3 = U.getInt(keyStartPtr3 + keyLength3 - Integer.BYTES);
-                }
-                else {
-                    x3 = U.getByte(keyStartPtr3);
-                    y3 = U.getByte(keyStartPtr3 + keyLength3 - Byte.BYTES);
-                }
-
-                int keyHash1 = (Integer.rotateLeft(x1 * seed, rotate) ^ y1) * seed;
-                int keyHash2 = (Integer.rotateLeft(x2 * seed, rotate) ^ y2) * seed;
-                int keyHash3 = (Integer.rotateLeft(x3 * seed, rotate) ^ y3) * seed;
-
-                int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
-                int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
-                int entryIdx3 = (keyHash3 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
+                int entryIdx1 = map.calculateEntryIndex(keyStartPtr1, keyLength1);
+                int entryIdx2 = map.calculateEntryIndex(keyStartPtr2, keyLength2);
 
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                // Put key and get map offset to put value
                 int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
                 int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
-                int entryOffset3 = map.putKey(keyVector3, keyStartPtr3, keyLength3, entryIdx3);
 
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 long word1 = U.getLong(regionPtr1);
                 long word2 = U.getLong(regionPtr2);
-                long word3 = U.getLong(regionPtr3);
                 if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
                     word1 = Long.reverseBytes(word1);
                     word2 = Long.reverseBytes(word2);
-                    word3 = Long.reverseBytes(word3);
                 }
 
                 regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
                 regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
-                regionPtr3 = extractValue(regionPtr3, word3, map, entryOffset3);
             }
         }
 
@@ -737,6 +709,9 @@ public class CalculateAverage_serkan_ozal {
         private static final int ENTRY_MASK = MAP_SIZE - 1;
         private static final int KEY_ARRAY_OFFSET = KEY_OFFSET - Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
+        private static final int HASH_SEED = 0x9E3779B9;
+        private static final int HASH_ROTATE = 5;
+
         private final byte[] data;
         private final int[] entryOffsets;
         private int entryOffsetIdx;
@@ -749,9 +724,7 @@ public class CalculateAverage_serkan_ozal {
         }
 
         // Credits: merykitty
-        private static int calculateKeyHash(long address, int keyLength) {
-            int seed = 0x9E3779B9;
-            int rotate = 5;
+        private int calculateEntryIndex(long address, int keyLength) {
             int x, y;
             if (keyLength >= Integer.BYTES) {
                 x = U.getInt(address);
@@ -761,14 +734,14 @@ public class CalculateAverage_serkan_ozal {
                 x = U.getByte(address);
                 y = U.getByte(address + keyLength - Byte.BYTES);
             }
-            return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
+            int keyHash = (Integer.rotateLeft(x * HASH_SEED, HASH_ROTATE) ^ y) * HASH_SEED;
+            // Get the position of the entry in the linear map based on calculated hash
+            return (keyHash & ENTRY_HASH_MASK) << ENTRY_SIZE_SHIFT;
         }
 
         private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength, int entryIdx) {
-//            // Calculate hash of key
-//            int keyHash = calculateKeyHash(keyStartAddress, keyLength);
-//            // and get the position of the entry in the linear map based on calculated hash
-//            int entryIdx = (keyHash & ENTRY_HASH_MASK) << ENTRY_SIZE_SHIFT;
+//            // Calculate entry index
+//            int entryIdx = calculateEntryIndex(keyStartAddress, keyLength);
 
             // Start searching from the calculated position
             // and continue until find an available slot in case of hash collision
