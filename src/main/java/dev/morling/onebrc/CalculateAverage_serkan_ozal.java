@@ -402,13 +402,13 @@ public class CalculateAverage_serkan_ozal {
                 // Calculate key hashes and find entry indexes
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
                 int x1, y1, x2, y2;
-//                if (keyLength1 >= Integer.BYTES && keyLength2 >= Integer.BYTES) {
-//                    x1 = U.getInt(keyStartPtr1);
-//                    x2 = U.getInt(keyStartPtr2);
-//                    y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
-//                    y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
-//                }
-//                else {
+                if (keyLength1 >= Integer.BYTES && keyLength2 >= Integer.BYTES) {
+                    x1 = U.getInt(keyStartPtr1);
+                    y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
+                    x2 = U.getInt(keyStartPtr2);
+                    y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
+                }
+                else {
                     if (keyLength1 >= Integer.BYTES) {
                         x1 = U.getInt(keyStartPtr1);
                         y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
@@ -425,7 +425,7 @@ public class CalculateAverage_serkan_ozal {
                         x2 = U.getByte(keyStartPtr2);
                         y2 = U.getByte(keyStartPtr2 + keyLength2 - Byte.BYTES);
                     }
-//                }
+                }
 
                 int keyHash1 = (Integer.rotateLeft(x1 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y1) * OpenMap.HASH_SEED;
                 int keyHash2 = (Integer.rotateLeft(x2 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y2) * OpenMap.HASH_SEED;
