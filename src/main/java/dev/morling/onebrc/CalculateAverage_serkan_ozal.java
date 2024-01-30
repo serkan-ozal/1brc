@@ -576,28 +576,28 @@ public class CalculateAverage_serkan_ozal {
                 }
                 regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
             }
-//            while (regionPtr2 < regionEnd2) {
-//                long keyStartPtr2 = regionPtr2;
-//                ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr2, NATIVE_BYTE_ORDER);
-//                int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-//                if (keyLength2 != vectorSize) {
-//                    regionPtr2 += (keyLength2 + 1);
-//                }
-//                else {
-//                    regionPtr2 += vectorSize;
-//                    for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
-//                        ;
-//                    keyLength2 = (int) (regionPtr2 - keyStartPtr2);
-//                    regionPtr2++;
-//                }
-//                int entryIdx2 = map.calculateEntryIndex(keyStartPtr2, keyLength2);
-//                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
-//                long word2 = U.getLong(regionPtr2);
-//                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-//                    word2 = Long.reverseBytes(word2);
-//                }
-//                regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
-//            }
+            while (regionPtr2 < regionEnd2) {
+                long keyStartPtr2 = regionPtr2;
+                ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr2, NATIVE_BYTE_ORDER);
+                int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
+                if (keyLength2 != vectorSize) {
+                    regionPtr2 += (keyLength2 + 1);
+                }
+                else {
+                    regionPtr2 += vectorSize;
+                    for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
+                        ;
+                    keyLength2 = (int) (regionPtr2 - keyStartPtr2);
+                    regionPtr2++;
+                }
+                int entryIdx2 = map.calculateEntryIndex(keyStartPtr2, keyLength2);
+                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
+                long word2 = U.getLong(regionPtr2);
+                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+                    word2 = Long.reverseBytes(word2);
+                }
+                regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
+            }
         }
 
         private long doProcessLine(long regionPtr, int vectorSize) {
