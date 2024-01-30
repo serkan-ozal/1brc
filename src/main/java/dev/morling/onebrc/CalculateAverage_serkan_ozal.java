@@ -352,8 +352,8 @@ public class CalculateAverage_serkan_ozal {
             final long regionStart1 = regionStart;
             final long regionEnd1 = findClosestLineEnd(regionStart1 + segmentSize);
 
-            final long regionStart2 = findClosestLineEnd(regionStart2 + segmentSize);
-            final long regionEnd2 = regionEnd;
+            final long regionStart2 = regionEnd1;
+            final long regionEnd2 = findClosestLineEnd(regionStart2 + segmentSize);
 
             final long regionStart3 = regionEnd2;
             final long regionEnd3 = findClosestLineEnd(regionStart3 + segmentSize);
