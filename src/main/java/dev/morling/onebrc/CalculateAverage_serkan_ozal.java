@@ -416,44 +416,53 @@ public class CalculateAverage_serkan_ozal {
                 int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
                 int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
 
-                if (keyLength1 != vectorSize) {
+                if (keyLength1 != vectorSize && keyLength2 != vectorSize) {
                     regionPtr1 += (keyLength1 + 1);
-                } else {
-                    regionPtr1 += vectorSize;
-                    for (; U.getByte(regionPtr1) != KEY_VALUE_SEPARATOR; regionPtr1++)
-                        ;
-                    keyLength1 = (int) (regionPtr1 - keyStartPtr1);
-                    regionPtr1++;
-                }
-                if (keyLength2 != vectorSize) {
                     regionPtr2 += (keyLength2 + 1);
                 } else {
-                    regionPtr2 += vectorSize;
-                    for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
-                        ;
-                    keyLength2 = (int) (regionPtr2 - keyStartPtr2);
-                    regionPtr2++;
+                    if (keyLength1 != vectorSize) {
+                        regionPtr1 += (keyLength1 + 1);
+                    } else {
+                        regionPtr1 += vectorSize;
+                        for (; U.getByte(regionPtr1) != KEY_VALUE_SEPARATOR; regionPtr1++)
+                            ;
+                        keyLength1 = (int) (regionPtr1 - keyStartPtr1);
+                        regionPtr1++;
+                    }
+                    if (keyLength2 != vectorSize) {
+                        regionPtr2 += (keyLength2 + 1);
+                    } else {
+                        regionPtr2 += vectorSize;
+                        for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
+                            ;
+                        keyLength2 = (int) (regionPtr2 - keyStartPtr2);
+                        regionPtr2++;
+                    }
                 }
 
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                int x1, y1;
-                if (keyLength1 >= Integer.BYTES) {
+                int x1, y1, x2, y2;
+                if (keyLength1 >= Integer.BYTES && keyLength2 >= Integer.BYTES) {
                     x1 = U.getInt(keyStartPtr1);
-                    y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
-                }
-                else {
-                    x1 = U.getByte(keyStartPtr1);
-                    y1 = U.getByte(keyStartPtr1 + keyLength1 - Byte.BYTES);
-                }
-                int x2, y2;
-                if (keyLength2 >= Integer.BYTES) {
                     x2 = U.getInt(keyStartPtr2);
+                    y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
                     y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
-                }
-                else {
-                    x2 = U.getByte(keyStartPtr2);
-                    y2 = U.getByte(keyStartPtr2 + keyLength2 - Byte.BYTES);
+                } else {
+                    if (keyLength1 >= Integer.BYTES) {
+                        x1 = U.getInt(keyStartPtr1);
+                        y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
+                    } else {
+                        x1 = U.getByte(keyStartPtr1);
+                        y1 = U.getByte(keyStartPtr1 + keyLength1 - Byte.BYTES);
+                    }
+                    if (keyLength2 >= Integer.BYTES) {
+                        x2 = U.getInt(keyStartPtr2);
+                        y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
+                    } else {
+                        x2 = U.getByte(keyStartPtr2);
+                        y2 = U.getByte(keyStartPtr2 + keyLength2 - Byte.BYTES);
+                    }
                 }
 
                 int keyHash1 = (Integer.rotateLeft(x1 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y1) * OpenMap.HASH_SEED;
