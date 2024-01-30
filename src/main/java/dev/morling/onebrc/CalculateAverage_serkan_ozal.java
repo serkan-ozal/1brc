@@ -367,11 +367,8 @@ public class CalculateAverage_serkan_ozal {
                 ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr1, NATIVE_BYTE_ORDER);
                 ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, ALL, regionPtr2, NATIVE_BYTE_ORDER);
 
-                VectorMask<Byte> keyVectorMask1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR);
-                VectorMask<Byte> keyVectorMask2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR);
-
-                int keyLength1 = keyVectorMask1.firstTrue();
-                int keyLength2 = keyVectorMask2.firstTrue();
+                int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
+                int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
 
                 if (keyLength1 != vectorSize && keyLength2 != vectorSize) {
                     regionPtr1 += (keyLength1 + 1);
