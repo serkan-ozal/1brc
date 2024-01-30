@@ -493,9 +493,9 @@ public class CalculateAverage_serkan_ozal {
                 }
                 regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
             }
-            while (regionPtr2 < regionEnd2) {
-                regionPtr2 = doProcessLine(regionPtr2, vectorSize);
-            }
+//            while (regionPtr2 < regionEnd2) {
+//                regionPtr2 = doProcessLine(regionPtr2, vectorSize);
+//            }
 
 //            for (long i = regionPtr1, j = regionPtr1; i < regionEnd1;) {
 //                byte b = U.getByte(i);
