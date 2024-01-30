@@ -649,8 +649,8 @@ public class CalculateAverage_serkan_ozal {
                 // Use vectorized search for the comparison of keys.
                 // Since majority of the city names >= 8 bytes and <= 16 bytes,
                 // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
-                ByteVector entryKeyVector = ByteVector.fromMemorySegment(BYTE_SPECIES, dataMemorySegment, keyStartArrayOffset, NATIVE_BYTE_ORDER);
-                // ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
+                ByteVector entryKeyVector =
+                        ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
                 int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
                 if (eqCount == keyLength) {
                     return true;
