@@ -358,8 +358,7 @@ public class CalculateAverage_serkan_ozal {
             long regionPtr1, regionPtr2;
 
             // Read and process region - main
-            for (regionPtr1 = regionStart1, regionPtr2 = regionStart2;
-                 regionPtr1 < regionEnd1 && regionPtr2 < regionEnd2;) {
+            for (regionPtr1 = regionStart1, regionPtr2 = regionStart2; regionPtr1 < regionEnd1 && regionPtr2 < regionEnd2;) {
                 // Search key/value separators and find keys' start and end positions
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
                 long keyStartPtr1 = regionPtr1;
@@ -377,10 +376,12 @@ public class CalculateAverage_serkan_ozal {
                 if (keyLength1 != vectorSize && keyLength2 != vectorSize) {
                     regionPtr1 += (keyLength1 + 1);
                     regionPtr2 += (keyLength2 + 1);
-                } else {
+                }
+                else {
                     if (keyLength1 != vectorSize) {
                         regionPtr1 += (keyLength1 + 1);
-                    } else {
+                    }
+                    else {
                         regionPtr1 += vectorSize;
                         for (; U.getByte(regionPtr1) != KEY_VALUE_SEPARATOR; regionPtr1++)
                             ;
@@ -389,7 +390,8 @@ public class CalculateAverage_serkan_ozal {
                     }
                     if (keyLength2 != vectorSize) {
                         regionPtr2 += (keyLength2 + 1);
-                    } else {
+                    }
+                    else {
                         regionPtr2 += vectorSize;
                         for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
                             ;
@@ -407,18 +409,21 @@ public class CalculateAverage_serkan_ozal {
                     x2 = U.getInt(keyStartPtr2);
                     y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
                     y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
-                } else {
+                }
+                else {
                     if (keyLength1 >= Integer.BYTES) {
                         x1 = U.getInt(keyStartPtr1);
                         y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
-                    } else {
+                    }
+                    else {
                         x1 = U.getByte(keyStartPtr1);
                         y1 = U.getByte(keyStartPtr1 + keyLength1 - Byte.BYTES);
                     }
                     if (keyLength2 >= Integer.BYTES) {
                         x2 = U.getInt(keyStartPtr2);
                         y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
-                    } else {
+                    }
+                    else {
                         x2 = U.getByte(keyStartPtr2);
                         y2 = U.getByte(keyStartPtr2 + keyLength2 - Byte.BYTES);
                     }
