@@ -418,7 +418,7 @@ public class CalculateAverage_serkan_ozal {
 
                 if (keyLength1 != vectorSize && keyLength2 != vectorSize) {
                     regionPtr1 += (keyLength1 + 1);
-                    regionPtr1 += (keyLength1 + 1);
+                    regionPtr2 += (keyLength2 + 1);
                 } else {
                     if (keyLength1 != vectorSize) {
                         regionPtr1 += (keyLength1 + 1);
