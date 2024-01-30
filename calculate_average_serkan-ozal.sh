@@ -25,13 +25,6 @@ JAVA_OPTS="$JAVA_OPTS -Djdk.incubator.vector.VECTOR_ACCESS_OOB_CHECK=0"
 if [[ ! "$(uname -s)" = "Darwin" ]]; then
   JAVA_OPTS="$JAVA_OPTS -XX:+UseTransparentHugePages"
 fi
-JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=quiet"
-JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline\,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::calculateEntryIndex"
-JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline\,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::putKey"
-JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline\,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::keysEqual"
-JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline\,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::putValue"
-JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline\,dev.morling.onebrc.CalculateAverage_serkan_ozal\$RegionProcessor::doProcessTail"
-JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline\,dev.morling.onebrc.CalculateAverage_serkan_ozal\$RegionProcessor::extractValue"
 
 CONFIGS="USE_SHARED_ARENA=true USE_SHARED_REGION=true CLOSE_STDOUT_ON_RESULT=true REGION_COUNT=128"
 
