@@ -360,6 +360,28 @@ public class CalculateAverage_serkan_ozal {
             return regionPtr + (decimalSepPos >>> 3) + 3;
         }
 
+        private void extractValue(OpenMap map,
+                                  long word1, int decimalSepPos1, int entryOffset1,
+                                  long word2, int decimalSepPos2, int entryOffset2) {
+            // Parse and extract value
+            int shift1 = 28 - decimalSepPos1;
+            int shift2 = 28 - decimalSepPos2;
+            long signed1 = (~word1 << 59) >> 63;
+            long signed2 = (~word2 << 59) >> 63;
+            long designMask1 = ~(signed1 & 0xFF);
+            long designMask2 = ~(signed2 & 0xFF);
+            long digits1 = ((word1 & designMask1) << shift1) & 0x0F000F0F00L;
+            long digits2 = ((word2 & designMask2) << shift2) & 0x0F000F0F00L;
+            long absValue1 = ((digits1 * 0x640a0001) >>> 32) & 0x3FF;
+            long absValue2 = ((digits2 * 0x640a0001) >>> 32) & 0x3FF;
+            int value1 = (int) ((absValue1 ^ signed1) - signed1);
+            int value2 = (int) ((absValue2 ^ signed2) - signed2);
+
+            // Put extracted value into map
+            map.putValue(entryOffset1, value1);
+            map.putValue(entryOffset2, value2);
+        }
+
         private void doProcessRegion(long regionStart, long regionEnd) {
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
 
@@ -470,8 +492,13 @@ public class CalculateAverage_serkan_ozal {
 
                 // Extract values by parsing and put them into map
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
-                regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
+                int decimalSepPos1 = Long.numberOfTrailingZeros(~word1 & 0x10101000);
+                int decimalSepPos2 = Long.numberOfTrailingZeros(~word2 & 0x10101000);
+
+                extractValue(map, word1, decimalSepPos1, entryOffset1, word2, decimalSepPos2, entryOffset2);
+
+                regionPtr1 = regionPtr1 + (decimalSepPos1 >>> 3) + 3;
+                regionPtr2 = regionPtr2 + (decimalSepPos2 >>> 3) + 3;
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
 
