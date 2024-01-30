@@ -367,7 +367,7 @@ public class CalculateAverage_serkan_ozal {
             final long segmentSize = size / 2;
 
             final long regionStart1 = regionStart;
-            final long regionEnd1 = findClosestLineEnd(regionStart1 + segmentSize);
+            final long regionEnd1 = Math.max(regionStart1, findClosestLineEnd(regionStart1 + segmentSize));
 
             final long regionStart2 = regionEnd1;
             final long regionEnd2 = regionEnd;
@@ -729,9 +729,6 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength, int entryIdx) {
-            // Calculate entry index
-            // int entryIdx = calculateEntryIndex(keyStartAddress, keyLength);
-
             // Start searching from the calculated position
             // and continue until find an available slot in case of hash collision
             // TODO Prevent infinite loop if all the slots are in use for other keys
