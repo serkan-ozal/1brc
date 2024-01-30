@@ -457,12 +457,12 @@ public class CalculateAverage_serkan_ozal {
             }
 
             // Read and process region - tail
-//            while (regionPtr1 < regionEnd1) {
-//                regionPtr1 = doProcessLine(regionPtr1, vectorSize);
-//            }
-//            while (regionPtr2 < regionEnd2) {
-//                regionPtr2 = doProcessLine(regionPtr2, vectorSize);
-//            }
+            while (regionPtr1 < regionEnd1) {
+                regionPtr1 = doProcessLine(regionPtr1, vectorSize);
+            }
+            while (regionPtr2 < regionEnd2) {
+                regionPtr2 = doProcessLine(regionPtr2, vectorSize);
+            }
 
 //            for (long i = regionPtr1, j = regionPtr1; i < regionEnd1;) {
 //                byte b = U.getByte(i);
