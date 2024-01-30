@@ -761,24 +761,20 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, int keyStartArrayOffset) {
-            if (keyVector != null) {
-                // Use vectorized search for the comparison of keys.
-                // Since majority of the city names >= 8 bytes and <= 16 bytes,
-                // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
-                ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
-                int eqMask = (int) keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
-                int eqCount = Integer.numberOfTrailingZeros(~eqMask);
-                if (eqCount >= keyLength) {
-                    return true;
-                }
-                else if (keyLength <= BYTE_SPECIES_SIZE) {
-                    return false;
-                }
+            // Use vectorized search for the comparison of keys.
+            // Since majority of the city names >= 8 bytes and <= 16 bytes,
+            // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
+            ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
+            int eqMask = (int) keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
+            int eqCount = Integer.numberOfTrailingZeros(~eqMask);
+            if (eqCount >= keyLength) {
+                return true;
+            }
+            else if (keyLength <= BYTE_SPECIES_SIZE) {
+                return false;
             }
 
             // Compare remaining parts of the keys
-
-            int keyCheckIdx = keyVector != null ? BYTE_SPECIES_SIZE : 0;
 
             int normalizedKeyLength = keyLength;
             if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
@@ -788,7 +784,7 @@ public class CalculateAverage_serkan_ozal {
             long keyStartOffset = keyStartArrayOffset + Unsafe.ARRAY_BYTE_BASE_OFFSET;
             int alignedKeyLength = normalizedKeyLength & 0xFFFFFFF8;
             int i;
-            for (i = keyCheckIdx; i < alignedKeyLength; i += Long.BYTES) {
+            for (i = BYTE_SPECIES_SIZE; i < alignedKeyLength; i += Long.BYTES) {
                 if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
                     return false;
                 }
