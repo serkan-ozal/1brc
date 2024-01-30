@@ -290,7 +290,7 @@ public class CalculateAverage_serkan_ozal {
                     long regionStart = regionGiven ? (r.address() + task.start) : r.address();
                     long regionEnd = regionStart + task.size;
 
-                    doProcessRegion(r, r.address(), regionStart, regionEnd);
+                    doProcessRegion(regionStart, regionEnd);
                 }
 
                 if (VERBOSE) {
@@ -334,7 +334,7 @@ public class CalculateAverage_serkan_ozal {
             }
         }
 
-        private void doProcessRegion(MemorySegment region, long regionAddress, long regionStart, long regionEnd) {
+        private void doProcessRegion(long regionStart, long regionEnd) {
             final int vectorSize = BYTE_SPECIES.vectorByteSize();
             final long regionMainLimit = regionEnd - BYTE_SPECIES_SIZE;
 
@@ -349,8 +349,8 @@ public class CalculateAverage_serkan_ozal {
             for (long i = regionPtr, j = regionPtr; i < regionEnd;) {
                 byte b = U.getByte(i);
                 if (b == KEY_VALUE_SEPARATOR) {
-                    long baseOffset = map.putKey(null, j, (int) (i - j));
-                    i = extractValue(i + 1, map, baseOffset);
+                    int entryOffset = map.putKey(null, j, (int) (i - j));
+                    i = extractValue(i + 1, map, entryOffset);
                     j = i;
                 }
                 else {
@@ -386,7 +386,7 @@ public class CalculateAverage_serkan_ozal {
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // Put key and get map offset to put value
-            long entryOffset = map.putKey(keyVector, keyStartPtr, keyLength);
+            int entryOffset = map.putKey(keyVector, keyStartPtr, keyLength);
 
             // Extract value, put it into map and return next position in the region to continue processing from there
             return extractValue(regionPtr, map, entryOffset);
@@ -394,7 +394,7 @@ public class CalculateAverage_serkan_ozal {
     }
 
     // Credits: merykitty
-    private static long extractValue(long regionPtr, OpenMap map, long entryOffset) {
+    private static long extractValue(long regionPtr, OpenMap map, int entryOffset) {
         long word = U.getLong(regionPtr);
         if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
             word = Long.reverseBytes(word);
@@ -586,20 +586,20 @@ public class CalculateAverage_serkan_ozal {
         private static final int KEY_ARRAY_OFFSET = KEY_OFFSET - Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
         private final byte[] data;
-        private final long[] entryOffsets;
+        private final int[] entryOffsets;
         private int entryOffsetIdx;
 
         private OpenMap() {
             this.data = new byte[MAP_SIZE];
             // Max number of unique keys are 10K, so 1 << 14 (16384) is long enough to hold offsets for all of them
-            this.entryOffsets = new long[1 << 14];
+            this.entryOffsets = new int[1 << 14];
             this.entryOffsetIdx = 0;
         }
 
         // Credits: merykitty
         private static int calculateKeyHash(long address, int keyLength) {
-            int seed = 0x9E3779B9;
-            int rotate = 5;
+            final int SEED = 0x9E3779B9;
+            final int ROTATE = 5;
             int x, y;
             if (keyLength >= Integer.BYTES) {
                 x = U.getInt(address);
@@ -609,10 +609,10 @@ public class CalculateAverage_serkan_ozal {
                 x = U.getByte(address);
                 y = U.getByte(address + keyLength - Byte.BYTES);
             }
-            return (Integer.rotateLeft(x * seed, rotate) ^ y) * seed;
+            return (Integer.rotateLeft(x * SEED, ROTATE) ^ y) * SEED;
         }
 
-        private long putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
+        private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength) {
             // Calculate hash of key
             int keyHash = calculateKeyHash(keyStartAddress, keyLength);
             // and get the position of the entry in the linear map based on calculated hash
@@ -621,7 +621,7 @@ public class CalculateAverage_serkan_ozal {
             // Start searching from the calculated position
             // and continue until find an available slot in case of hash collision
             // TODO Prevent infinite loop if all the slots are in use for other keys
-            for (long entryOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + idx;; entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK) {
+            for (int entryOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + idx;; entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK) {
                 int keySize = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
                 // Check whether current index is empty (no another key is inserted yet)
                 if (keySize == 0) {
@@ -633,35 +633,33 @@ public class CalculateAverage_serkan_ozal {
                     entryOffsets[entryOffsetIdx++] = entryOffset;
                     return entryOffset;
                 }
-                int keyStartArrayOffset = (int) entryOffset + KEY_ARRAY_OFFSET;
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, keyStartArrayOffset)) {
+                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
                     return entryOffset;
                 }
             }
         }
 
         private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, int keyStartArrayOffset) {
-            int keyCheckIdx = 0;
             if (keyVector != null) {
                 // Use vectorized search for the comparison of keys.
                 // Since majority of the city names >= 8 bytes and <= 16 bytes,
                 // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
                 ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
-                long eqMask = keyVector.compare(VectorOperators.EQ, entryKeyVector).toLong();
-                int eqCount = Long.numberOfTrailingZeros(~eqMask);
-                if (eqCount >= keyLength) {
+                int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
+                if (eqCount == keyLength) {
                     return true;
                 }
                 else if (keyLength <= BYTE_SPECIES_SIZE) {
                     return false;
                 }
-                keyCheckIdx = BYTE_SPECIES_SIZE;
             }
 
             // Compare remaining parts of the keys
+
+            int keyCheckIdx = keyVector != null ? BYTE_SPECIES_SIZE : 0;
 
             int normalizedKeyLength = keyLength;
             if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
@@ -690,18 +688,18 @@ public class CalculateAverage_serkan_ozal {
             return wordA == wordB;
         }
 
-        private void putValue(long entryOffset, int value) {
-            long countOffset = entryOffset + COUNT_OFFSET;
+        private void putValue(int entryOffset, int value) {
+            int countOffset = entryOffset + COUNT_OFFSET;
             U.putInt(data, countOffset, U.getInt(data, countOffset) + 1);
-            long minValueOffset = entryOffset + MIN_VALUE_OFFSET;
+            int minValueOffset = entryOffset + MIN_VALUE_OFFSET;
             if (value < U.getShort(data, minValueOffset)) {
                 U.putShort(data, minValueOffset, (short) value);
             }
-            long maxValueOffset = entryOffset + MAX_VALUE_OFFSET;
+            int maxValueOffset = entryOffset + MAX_VALUE_OFFSET;
             if (value > U.getShort(data, maxValueOffset)) {
                 U.putShort(data, maxValueOffset, (short) value);
             }
-            long sumOffset = entryOffset + VALUE_SUM_OFFSET;
+            int sumOffset = entryOffset + VALUE_SUM_OFFSET;
             U.putLong(data, sumOffset, U.getLong(data, sumOffset) + value);
         }
 
@@ -709,13 +707,13 @@ public class CalculateAverage_serkan_ozal {
             // Merge this local map into global result map
             Arrays.sort(entryOffsets, 0, entryOffsetIdx);
             for (int i = 0; i < entryOffsetIdx; i++) {
-                long entryOffset = entryOffsets[i];
+                int entryOffset = entryOffsets[i];
                 int keyLength = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
                 if (keyLength == 0) {
                     // No entry is available for this index, so continue iterating
                     continue;
                 }
-                int entryArrayIdx = (int) (entryOffset + KEY_OFFSET - Unsafe.ARRAY_BYTE_BASE_OFFSET);
+                int entryArrayIdx = (entryOffset + KEY_OFFSET - Unsafe.ARRAY_BYTE_BASE_OFFSET);
                 String key = new String(data, entryArrayIdx, keyLength, StandardCharsets.UTF_8);
                 int count = U.getInt(data, entryOffset + COUNT_OFFSET);
                 short minValue = U.getShort(data, entryOffset + MIN_VALUE_OFFSET);
