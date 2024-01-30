@@ -467,35 +467,35 @@ public class CalculateAverage_serkan_ozal {
                 int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
                 int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
 
-//                regionPtr1 = extractValue(regionPtr1, map, entryOffset1);
-//                regionPtr2 = extractValue(regionPtr2, map, entryOffset2);
+                regionPtr1 = extractValue(regionPtr1, map, entryOffset1);
+                regionPtr2 = extractValue(regionPtr2, map, entryOffset2);
 
-                long word1 = U.getLong(regionPtr1);
-                long word2 = U.getLong(regionPtr2);
-                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                    word1 = Long.reverseBytes(word1);
-                    word2 = Long.reverseBytes(word2);
-                }
-
-                // Parse and extract value
-                int decimalSepPos1 = Long.numberOfTrailingZeros(~word1 & 0x10101000);
-                int decimalSepPos2 = Long.numberOfTrailingZeros(~word2 & 0x10101000);
-                int shift1 = 28 - decimalSepPos1;
-                int shift2 = 28 - decimalSepPos2;
-                long signed1 = (~word1 << 59) >> 63;
-                long signed2 = (~word2 << 59) >> 63;
-                long designMask1 = ~(signed1 & 0xFF);
-                long designMask2 = ~(signed2 & 0xFF);
-                long digits1 = ((word1 & designMask1) << shift1) & 0x0F000F0F00L;
-                long digits2 = ((word2 & designMask2) << shift2) & 0x0F000F0F00L;
-                long absValue1 = ((digits1 * 0x640a0001) >>> 32) & 0x3FF;
-                long absValue2 = ((digits2 * 0x640a0001) >>> 32) & 0x3FF;
-                int value1 = (int) ((absValue1 ^ signed1) - signed1);
-                int value2 = (int) ((absValue2 ^ signed2) - signed2);
-                map.putValue(entryOffset1, value1);
-                map.putValue(entryOffset2, value2);
-                regionPtr1 = regionPtr1 + (decimalSepPos1 >>> 3) + 3;
-                regionPtr2 = regionPtr2 + (decimalSepPos2 >>> 3) + 3;
+//                long word1 = U.getLong(regionPtr1);
+//                long word2 = U.getLong(regionPtr2);
+//                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+//                    word1 = Long.reverseBytes(word1);
+//                    word2 = Long.reverseBytes(word2);
+//                }
+//
+//                // Parse and extract value
+//                int decimalSepPos1 = Long.numberOfTrailingZeros(~word1 & 0x10101000);
+//                int decimalSepPos2 = Long.numberOfTrailingZeros(~word2 & 0x10101000);
+//                int shift1 = 28 - decimalSepPos1;
+//                int shift2 = 28 - decimalSepPos2;
+//                long signed1 = (~word1 << 59) >> 63;
+//                long signed2 = (~word2 << 59) >> 63;
+//                long designMask1 = ~(signed1 & 0xFF);
+//                long designMask2 = ~(signed2 & 0xFF);
+//                long digits1 = ((word1 & designMask1) << shift1) & 0x0F000F0F00L;
+//                long digits2 = ((word2 & designMask2) << shift2) & 0x0F000F0F00L;
+//                long absValue1 = ((digits1 * 0x640a0001) >>> 32) & 0x3FF;
+//                long absValue2 = ((digits2 * 0x640a0001) >>> 32) & 0x3FF;
+//                int value1 = (int) ((absValue1 ^ signed1) - signed1);
+//                int value2 = (int) ((absValue2 ^ signed2) - signed2);
+//                map.putValue(entryOffset1, value1);
+//                map.putValue(entryOffset2, value2);
+//                regionPtr1 = regionPtr1 + (decimalSepPos1 >>> 3) + 3;
+//                regionPtr2 = regionPtr2 + (decimalSepPos2 >>> 3) + 3;
             }
         }
 
