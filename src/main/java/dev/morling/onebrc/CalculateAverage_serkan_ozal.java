@@ -379,8 +379,7 @@ public class CalculateAverage_serkan_ozal {
             // - two lines at a time (according to my experiment, this is optimum value in terms of register spilling)
             // - most of the implementation is inlined
             // - so get the benefit of ILP (Instruction Level Parallelism) better
-            for (regionPtr1 = regionStart1, regionPtr2 = regionStart2;
-                 regionPtr1 < regionEnd1 && regionPtr2 < regionEnd2;) {
+            for (regionPtr1 = regionStart1, regionPtr2 = regionStart2; regionPtr1 < regionEnd1 && regionPtr2 < regionEnd2;) {
                 // Search key/value separators and find keys' start and end positions
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
                 long keyStartPtr1 = regionPtr1;
@@ -417,6 +416,14 @@ public class CalculateAverage_serkan_ozal {
                         keyLength2 = (int) (regionPtr2 - keyStartPtr2);
                         regionPtr2++;
                     }
+                }
+
+                // Read first words as they will be used while extracting values later
+                long word1 = U.getLong(regionPtr1);
+                long word2 = U.getLong(regionPtr2);
+                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+                    word1 = Long.reverseBytes(word1);
+                    word2 = Long.reverseBytes(word2);
                 }
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -463,13 +470,6 @@ public class CalculateAverage_serkan_ozal {
 
                 // Extract values by parsing and put them into map
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                long word1 = U.getLong(regionPtr1);
-                long word2 = U.getLong(regionPtr2);
-                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                    word1 = Long.reverseBytes(word1);
-                    word2 = Long.reverseBytes(word2);
-                }
-
                 regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
                 regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
