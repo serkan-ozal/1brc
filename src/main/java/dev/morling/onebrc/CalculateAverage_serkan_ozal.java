@@ -42,6 +42,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -75,7 +76,7 @@ public class CalculateAverage_serkan_ozal {
     private static final int REGION_COUNT = 512; // getIntegerConfig("REGION_COUNT", -1);
     private static final boolean USE_SHARED_ARENA = true; // getBooleanConfig("USE_SHARED_ARENA", true);
     private static final boolean USE_SHARED_REGION = true; // getBooleanConfig("USE_SHARED_REGION", true);
-    private static final int MAP_CAPACITY = 1 << 19; // getIntegerConfig("MAP_CAPACITY", 1 << 17);
+    private static final int MAP_CAPACITY = 1 << 17; // getIntegerConfig("MAP_CAPACITY", 1 << 17);
     private static final boolean CLOSE_STDOUT_ON_RESULT = true; // getBooleanConfig("CLOSE_STDOUT_ON_RESULT", true);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -129,9 +130,18 @@ public class CalculateAverage_serkan_ozal {
                 region = fc.map(FileChannel.MapMode.READ_ONLY, 0, fileSize, arena);
             }
 
-            List<Task> tasks = new ArrayList<>(regionCount);
-            // Split whole file into regions and create tasks for each region
+            Queue<Task> sharedTasks = new ConcurrentLinkedQueue<>();
+
+            // Start region processors to process tasks for each region
             List<Future<Response>> futures = new ArrayList<>(regionCount);
+            for (int i = 0; i < concurrency; i++) {
+                Request request = new Request(arena, sharedTasks, result);
+                RegionProcessor regionProcessor = createRegionProcessor(request);
+                Future<Response> future = executor.submit(regionProcessor);
+                futures.add(future);
+            }
+
+            // Split whole file into regions and create tasks for each region
             for (int i = 0; i < regionCount; i++) {
                 long endPos = Math.min(fileSize, startPos + regionSize);
                 // Lines might split into different regions.
@@ -140,19 +150,11 @@ public class CalculateAverage_serkan_ozal {
                         ? findClosestLineEnd(fc, endPos, lineBuffer)
                         : fileSize;
                 Task task = new Task(fc, region, startPos, closestLineEndPos);
-                tasks.add(task);
+                sharedTasks.offer(task);
                 startPos = closestLineEndPos;
             }
 
-            Queue<Task> sharedTasks = new ConcurrentLinkedQueue<>(tasks);
-
-            // Start region processors to process tasks for each region
-            for (int i = 0; i < concurrency; i++) {
-                Request request = new Request(arena, sharedTasks, result);
-                RegionProcessor regionProcessor = createRegionProcessor(request);
-                Future<Response> future = executor.submit(regionProcessor);
-                futures.add(future);
-            }
+            result.allTasksSubmitted.set(true);
 
             // Wait processors to complete
             for (Future<Response> future : futures) {
@@ -282,15 +284,17 @@ public class CalculateAverage_serkan_ozal {
             // If no shared global memory arena is used, create and use its own local memory arena
             Arena a = arenaGiven ? arena : Arena.ofConfined();
             try {
-                for (Task task = sharedTasks.poll(); task != null; task = sharedTasks.poll()) {
-                    boolean regionGiven = task.region != null;
-                    MemorySegment r = regionGiven
-                            ? task.region
-                            : task.fileChannel.map(FileChannel.MapMode.READ_ONLY, task.start, task.size, a);
-                    long regionStart = regionGiven ? (r.address() + task.start) : r.address();
-                    long regionEnd = regionStart + task.size;
+                while (!result.allTasksSubmitted.get()) {
+                    for (Task task = sharedTasks.poll(); task != null; task = sharedTasks.poll()) {
+                        boolean regionGiven = task.region != null;
+                        MemorySegment r = regionGiven
+                                ? task.region
+                                : task.fileChannel.map(FileChannel.MapMode.READ_ONLY, task.start, task.size, a);
+                        long regionStart = regionGiven ? (r.address() + task.start) : r.address();
+                        long regionEnd = regionStart + task.size;
 
-                    doProcessRegion(regionStart, regionEnd);
+                        doProcessRegion(regionStart, regionEnd);
+                    }
                 }
 
                 if (VERBOSE) {
@@ -368,7 +372,6 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private void doProcessRegion(long regionStart, long regionEnd) {
-            final OpenMap M = map;
             final long size = regionEnd - regionStart;
             final long segmentSize = size / 2;
 
@@ -470,14 +473,14 @@ public class CalculateAverage_serkan_ozal {
 
                 // Put keys and calculate entry offsets to put values
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                int entryOffset1 = M.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
-                int entryOffset2 = M.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
+                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Extract values by parsing and put them into map
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                regionPtr1 = extractValue(regionPtr1, word1, M, entryOffset1);
-                regionPtr2 = extractValue(regionPtr2, word2, M, entryOffset2);
+                regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
+                regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
 
@@ -627,9 +630,11 @@ public class CalculateAverage_serkan_ozal {
 
         private final Lock lock = new ReentrantLock();
         private final Map<String, KeyResult> resultMap;
+        private final AtomicBoolean allTasksSubmitted;
 
         private Result() {
             this.resultMap = new TreeMap<>();
+            this.allTasksSubmitted = new AtomicBoolean(false);
         }
 
         private boolean tryMergeInto(OpenMap map) {
