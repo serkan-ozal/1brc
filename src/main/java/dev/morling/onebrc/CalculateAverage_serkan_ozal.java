@@ -495,8 +495,12 @@ public class CalculateAverage_serkan_ozal {
                     int eqCount1 = keyVector1.compare(VectorOperators.EQ, entryKeyVector1).trueCount();
                     int eqCount2 = keyVector2.compare(VectorOperators.EQ, entryKeyVector2).trueCount();
 
-                    entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryOffset1, keySize1, eqCount1);
-                    entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryOffset2, keySize2, eqCount2);
+                    if (keySize1 != keyLength1 || eqCount1 != keyLength1) {
+                        entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryOffset1, keySize1, eqCount1);
+                    }
+                    if (keySize2 != keyLength2 || eqCount2 != keyLength2) {
+                        entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryOffset2, keySize2, eqCount2);
+                    }
                 }
 
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
