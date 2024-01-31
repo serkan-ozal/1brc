@@ -156,7 +156,7 @@ public class CalculateAverage_serkan_ozal {
             }
 
             sharedTasks.addAll(tasks);
-            result.started.countDown();
+            request.start();
 
             // Wait processors to complete
             for (Future<Response> future : futures) {
@@ -251,12 +251,14 @@ public class CalculateAverage_serkan_ozal {
      */
     private static class RegionProcessor implements Callable<Response> {
 
+        private final Request request;
         private final Arena arena;
         private final Queue<Task> sharedTasks;
         private final Result result;
         private OpenMap map;
 
         private RegionProcessor(Request request) {
+            this.request = request;
             this.arena = request.arena;
             this.sharedTasks = request.sharedTasks;
             this.result = request.result;
@@ -286,7 +288,7 @@ public class CalculateAverage_serkan_ozal {
             // If no shared global memory arena is used, create and use its own local memory arena
             Arena a = arenaGiven ? arena : Arena.ofConfined();
             try {
-                result.started.await();
+                request.waitForStart();
 
                 for (Task task = sharedTasks.poll(); task != null; task = sharedTasks.poll()) {
                     boolean regionGiven = task.region != null;
@@ -568,11 +570,20 @@ public class CalculateAverage_serkan_ozal {
         private final Arena arena;
         private final Queue<Task> sharedTasks;
         private final Result result;
+        private final CountDownLatch started = new CountDownLatch(1);
 
         private Request(Arena arena, Queue<Task> sharedTasks, Result result) {
             this.arena = arena;
             this.sharedTasks = sharedTasks;
             this.result = result;
+        }
+
+        private void waitForStart() throws InterruptedException {
+            started.await();
+        }
+
+        private void start() {
+            started.countDown();
         }
 
     }
@@ -632,7 +643,6 @@ public class CalculateAverage_serkan_ozal {
 
         private final Lock lock = new ReentrantLock();
         private final Map<String, KeyResult> resultMap;
-        private final CountDownLatch started = new CountDownLatch(1);
 
         private Result() {
             this.resultMap = new TreeMap<>();
