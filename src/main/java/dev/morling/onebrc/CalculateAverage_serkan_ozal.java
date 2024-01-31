@@ -401,7 +401,7 @@ public class CalculateAverage_serkan_ozal {
 
                 int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
                 int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-                int keyLength3 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
+                int keyLength3 = keyVector3.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
 
                 if (keyLength1 != BYTE_SPECIES_SIZE && keyLength2 != BYTE_SPECIES_SIZE && keyLength3 != BYTE_SPECIES_SIZE) {
                     regionPtr1 += (keyLength1 + 1);
