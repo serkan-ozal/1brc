@@ -134,7 +134,7 @@ public class CalculateAverage_serkan_ozal {
 
             // Start region processors to process tasks for each region
             List<Future<Response>> futures = new ArrayList<>(regionCount);
-            for (int i = 0; i < concurrency; i++) {
+            for (int i = 0; i < concurrency / 2; i++) {
                 Request request = new Request(arena, sharedTasks, result);
                 RegionProcessor regionProcessor = createRegionProcessor(request);
                 Future<Response> future = executor.submit(regionProcessor);
@@ -152,6 +152,13 @@ public class CalculateAverage_serkan_ozal {
                 Task task = new Task(fc, region, startPos, closestLineEndPos);
                 sharedTasks.offer(task);
                 startPos = closestLineEndPos;
+            }
+
+            for (int i = concurrency / 2; i < concurrency; i++) {
+                Request request = new Request(arena, sharedTasks, result);
+                RegionProcessor regionProcessor = createRegionProcessor(request);
+                Future<Response> future = executor.submit(regionProcessor);
+                futures.add(future);
             }
 
             result.allTasksSubmitted.set(true);
