@@ -469,14 +469,14 @@ public class CalculateAverage_serkan_ozal {
 
                 // Put keys and calculate entry offsets to put values
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
-                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
-//                if (entryOffset1 == 0) {
-//                    entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
-//                }
-//                if (entryOffset2 == 0) {
-//                    entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
-//                }
+                int entryOffset1 = map.putKeyFast(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+                int entryOffset2 = map.putKeyFast(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
+                if (entryOffset1 == 0) {
+                    entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1 + 1);
+                }
+                if (entryOffset2 == 0) {
+                    entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2 + 1);
+                }
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Extract values by parsing and put them into map
