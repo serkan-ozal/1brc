@@ -387,14 +387,14 @@ public class CalculateAverage_serkan_ozal {
             for (regionPtr1 = regionStart1, regionPtr2 = regionStart2; regionPtr1 < regionEnd1 && regionPtr2 < regionEnd2;) {
                 // Search key/value separators and find keys' start and end positions
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                long keyStartPtr1 = regionPtr1;
-                long keyStartPtr2 = regionPtr2;
-
                 ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr1, NATIVE_BYTE_ORDER);
                 ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr2, NATIVE_BYTE_ORDER);
 
                 int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
                 int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
+
+                long keyStartPtr1 = regionPtr1;
+                long keyStartPtr2 = regionPtr2;
 
                 if (keyLength1 != BYTE_SPECIES_SIZE && keyLength2 != BYTE_SPECIES_SIZE) {
                     regionPtr1 += (keyLength1 + 1);
@@ -460,8 +460,8 @@ public class CalculateAverage_serkan_ozal {
                     }
                 }
 
-                int keyHash1 = (Integer.rotateLeft(x1 * 0x9E3779B9, 5) ^ y1) * 0x9E3779B9;
-                int keyHash2 = (Integer.rotateLeft(x2 * 0x9E3779B9, 5) ^ y2) * 0x9E3779B9;
+                int keyHash1 = (Integer.rotateLeft(x1, 5) ^ y1) * 0x9E3779B9;
+                int keyHash2 = (Integer.rotateLeft(x2, 5) ^ y2) * 0x9E3779B9;
 
                 int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
                 int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
