@@ -460,8 +460,8 @@ public class CalculateAverage_serkan_ozal {
                     }
                 }
 
-                int keyHash1 = (Integer.rotateLeft(x1 * 0x9E3779B9, 5) ^ y1) * 0x9E3779B9;
-                int keyHash2 = (Integer.rotateLeft(x2 * 0x9E3779B9, 5) ^ y2) * 0x9E3779B9;
+                int keyHash1 = (Integer.rotateLeft(x1 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y1) * OpenMap.HASH_SEED;
+                int keyHash2 = (Integer.rotateLeft(x2 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y2) * OpenMap.HASH_SEED;
 
                 int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
                 int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
@@ -626,7 +626,6 @@ public class CalculateAverage_serkan_ozal {
 
         private final Lock lock = new ReentrantLock();
         private final Map<String, KeyResult> resultMap;
-        private String resultStr;
 
         private Result() {
             this.resultMap = new TreeMap<>();
@@ -655,23 +654,6 @@ public class CalculateAverage_serkan_ozal {
             finally {
                 lock.unlock();
             }
-        }
-
-        private void buildString() {
-            StringBuilder sb = new StringBuilder(1 << 14);
-            boolean firstEntryAppended = false;
-            sb.append("{");
-            for (Map.Entry<String, KeyResult> e : resultMap.entrySet()) {
-                if (firstEntryAppended) {
-                    sb.append(", ");
-                }
-                String key = e.getKey();
-                KeyResult value = e.getValue();
-                sb.append(key).append("=").append(value);
-                firstEntryAppended = true;
-            }
-            sb.append('}');
-            resultStr = sb.toString();
         }
 
         private void print() {
