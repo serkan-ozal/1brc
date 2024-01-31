@@ -456,7 +456,7 @@ public class CalculateAverage_serkan_ozal {
                     }
                     else {
                         x2 = U.getByte(keyStartPtr2);
-                        y2 = U.getByte(regionPtr2 - 5);
+                        y2 = U.getByte(regionPtr2 - 2);
                     }
                 }
 
@@ -780,9 +780,9 @@ public class CalculateAverage_serkan_ozal {
             // Compare remaining parts of the keys
 
             int normalizedKeyLength = keyLength;
-//            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-//                normalizedKeyLength = Integer.reverseBytes(normalizedKeyLength);
-//            }
+            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+                normalizedKeyLength = Integer.reverseBytes(normalizedKeyLength);
+            }
 
             long keyStartOffset = keyStartArrayOffset + Unsafe.ARRAY_BYTE_BASE_OFFSET;
             int alignedKeyLength = normalizedKeyLength & 0xFFFFFFF8;
@@ -795,10 +795,10 @@ public class CalculateAverage_serkan_ozal {
 
             long wordA = U.getLong(keyStartAddress + i);
             long wordB = U.getLong(data, keyStartOffset + i);
-//            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-//                wordA = Long.reverseBytes(wordA);
-//                wordB = Long.reverseBytes(wordB);
-//            }
+            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+                wordA = Long.reverseBytes(wordA);
+                wordB = Long.reverseBytes(wordB);
+            }
             int halfShift = (Long.BYTES - (normalizedKeyLength & 0x00000007)) << 2;
             long mask = (0xFFFFFFFFFFFFFFFFL >>> halfShift) >> halfShift;
             wordA = wordA & mask;
