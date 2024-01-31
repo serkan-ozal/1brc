@@ -469,14 +469,46 @@ public class CalculateAverage_serkan_ozal {
 
                 // Put keys and calculate entry offsets to put values
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                int entryOffset1 = map.putKeyFast(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
-                int entryOffset2 = map.putKeyFast(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
-                if (entryOffset1 == 0) {
-                    entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1 + OpenMap.ENTRY_SIZE);
+//                int entryOffset1 = map.putKeyFast(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+//                int entryOffset2 = map.putKeyFast(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
+//                if (entryOffset1 == 0) {
+//                    entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1 + OpenMap.ENTRY_SIZE);
+//                }
+//                if (entryOffset2 == 0) {
+//                    entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2 + OpenMap.ENTRY_SIZE);
+//                }
+
+                int entryOffset1 = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx1;
+                int entryOffset2 = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx2;
+                int keySize1 = U.getInt(map.data, entryOffset1 + OpenMap.KEY_SIZE_OFFSET);
+                int keySize2 = U.getInt(map.data, entryOffset2 + OpenMap.KEY_SIZE_OFFSET);
+                if (keySize1 == 0) {
+                    // Initialize entry slot for new key
+                    U.putShort(map.data, entryOffset1 + OpenMap.MIN_VALUE_OFFSET, Short.MAX_VALUE);
+                    U.putShort(map.data, entryOffset1 + OpenMap.MAX_VALUE_OFFSET, Short.MIN_VALUE);
+                    U.putInt(map.data, entryOffset1 + OpenMap.KEY_SIZE_OFFSET, keyLength1);
+                    U.copyMemory(null, keyStartPtr1, map.data, entryOffset1 + OpenMap.KEY_OFFSET, keyLength1);
+                    map.entryOffsets[map.entryOffsetIdx++] = entryOffset1;
                 }
-                if (entryOffset2 == 0) {
-                    entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2 + OpenMap.ENTRY_SIZE);
+                if (keySize2 == 0) {
+                    // Initialize entry slot for new key
+                    U.putShort(map.data, entryOffset2 + OpenMap.MIN_VALUE_OFFSET, Short.MAX_VALUE);
+                    U.putShort(map.data, entryOffset2 + OpenMap.MAX_VALUE_OFFSET, Short.MIN_VALUE);
+                    U.putInt(map.data, entryOffset2 + OpenMap.KEY_SIZE_OFFSET, keyLength2);
+                    U.copyMemory(null, keyStartPtr2, map.data, entryOffset2 + OpenMap.KEY_OFFSET, keyLength2);
+                    map.entryOffsets[map.entryOffsetIdx++] = entryOffset2;
                 }
+                if (keySize1 == keyLength1 && map.keysEqual(keyVector1, keyStartPtr1, keyLength1, entryOffset1 + OpenMap.KEY_ARRAY_OFFSET)) {
+                    entryOffset1 = entryOffset1;
+                } else {
+                    entryOffset1 = entryOffset1 + OpenMap.ENTRY_SIZE;
+                }
+                if (keySize2 == keyLength2 && map.keysEqual(keyVector2, keyStartPtr2, keyLength2, entryOffset2 + OpenMap.KEY_ARRAY_OFFSET)) {
+                    entryOffset2 = entryOffset2;
+                } else {
+                    entryOffset2 = entryOffset2 + OpenMap.ENTRY_SIZE;
+                }
+
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Extract values by parsing and put them into map
@@ -763,22 +795,6 @@ public class CalculateAverage_serkan_ozal {
             // Otherwise, continue iterating until find an available slot.
             if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
                 return entryOffset;
-            } else {
-                entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK;
-                keySize = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
-                // Check whether current index is empty (no another key is inserted yet)
-                if (keySize == 0) {
-                    // Initialize entry slot for new key
-                    U.putShort(data, entryOffset + MIN_VALUE_OFFSET, Short.MAX_VALUE);
-                    U.putShort(data, entryOffset + MAX_VALUE_OFFSET, Short.MIN_VALUE);
-                    U.putInt(data, entryOffset + KEY_SIZE_OFFSET, keyLength);
-                    U.copyMemory(null, keyStartAddress, data, entryOffset + KEY_OFFSET, keyLength);
-                    entryOffsets[entryOffsetIdx++] = entryOffset;
-                    return entryOffset;
-                }
-                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
-                    return entryOffset;
-                }
             }
             return 0;
         }
