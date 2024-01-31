@@ -626,6 +626,7 @@ public class CalculateAverage_serkan_ozal {
 
         private final Lock lock = new ReentrantLock();
         private final Map<String, KeyResult> resultMap;
+        private String resultStr;
 
         private Result() {
             this.resultMap = new TreeMap<>();
@@ -638,6 +639,7 @@ public class CalculateAverage_serkan_ozal {
             }
             try {
                 map.merge(this.resultMap);
+                buildString();
                 return true;
             }
             finally {
@@ -650,13 +652,14 @@ public class CalculateAverage_serkan_ozal {
             lock.lock();
             try {
                 map.merge(this.resultMap);
+                buildString();
             }
             finally {
                 lock.unlock();
             }
         }
 
-        private void print() {
+        private void buildString() {
             StringBuilder sb = new StringBuilder(1 << 14);
             boolean firstEntryAppended = false;
             sb.append("{");
@@ -670,7 +673,25 @@ public class CalculateAverage_serkan_ozal {
                 firstEntryAppended = true;
             }
             sb.append('}');
-            System.out.println(sb);
+            resultStr = sb.toString();
+        }
+
+        private void print() {
+//            StringBuilder sb = new StringBuilder(1 << 14);
+//            boolean firstEntryAppended = false;
+//            sb.append("{");
+//            for (Map.Entry<String, KeyResult> e : resultMap.entrySet()) {
+//                if (firstEntryAppended) {
+//                    sb.append(", ");
+//                }
+//                String key = e.getKey();
+//                KeyResult value = e.getValue();
+//                sb.append(key).append("=").append(value);
+//                firstEntryAppended = true;
+//            }
+//            sb.append('}');
+//            System.out.println(sb);
+            System.out.println(resultStr);
         }
 
     }
