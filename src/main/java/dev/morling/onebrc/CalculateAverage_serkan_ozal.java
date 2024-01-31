@@ -478,14 +478,16 @@ public class CalculateAverage_serkan_ozal {
                 }
                 int decimalSepPos1 = Long.numberOfTrailingZeros(~word1 & 0x10101000);
                 int decimalSepPos2 = Long.numberOfTrailingZeros(~word2 & 0x10101000);
-                int value1 = extractValue(word1, decimalSepPos1);
-                int value2 = extractValue(word2, decimalSepPos2);
-
-                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
-                map.putValue(entryOffset1, value1);
-
-                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
-                map.putValue(entryOffset2, value2);
+                processKeyAndValue(keyVector1, keyStartPtr1, keyLength1, entryIdx1, word1, decimalSepPos1,
+                                   keyVector2, keyStartPtr2, keyLength2, entryIdx2, word2, decimalSepPos2);
+//                int value1 = extractValue(word1, decimalSepPos1);
+//                int value2 = extractValue(word2, decimalSepPos2);
+//
+//                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+//                map.putValue(entryOffset1, value1);
+//
+//                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
+//                map.putValue(entryOffset2, value2);
 
                 regionPtr1 = regionPtr1 + (decimalSepPos1 >>> 3) + 3;
                 regionPtr2 = regionPtr2 + (decimalSepPos2 >>> 3) + 3;
@@ -507,6 +509,18 @@ public class CalculateAverage_serkan_ozal {
 
             // Read and process region - tail
 //            doProcessTail(regionPtr1, regionEnd1, regionPtr2, regionEnd2);
+        }
+
+        private void processKeyAndValue(ByteVector keyVector1, long keyStartPtr1, int keyLength1, int entryIdx1, long word1, int decimalSepPos1,
+                                        ByteVector keyVector2, long keyStartPtr2, int keyLength2, int entryIdx2, long word2, int decimalSepPos2) {
+            int value1 = extractValue(word1, decimalSepPos1);
+            int value2 = extractValue(word2, decimalSepPos2);
+
+            int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+            map.putValue(entryOffset1, value1);
+
+            int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
+            map.putValue(entryOffset2, value2);
         }
 
         private void doProcessTail(long regionPtr1, long regionEnd1, long regionPtr2, long regionEnd2) {
