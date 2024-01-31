@@ -544,15 +544,13 @@ public class CalculateAverage_serkan_ozal {
             }
 
             int keyHash1 = (Integer.rotateLeft(x1 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y1) * OpenMap.HASH_SEED;
-            int keyHash2 = (Integer.rotateLeft(x2 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y2) * OpenMap.HASH_SEED;
-
             int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
-            int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
-
             int value1 = extractValue(word1, decimalSepPos1);
             int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
             map.putValue(entryOffset1, value1);
 
+            int keyHash2 = (Integer.rotateLeft(x2 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y2) * OpenMap.HASH_SEED;
+            int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
             int value2 = extractValue(word2, decimalSepPos2);
             int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
             map.putValue(entryOffset2, value2);
