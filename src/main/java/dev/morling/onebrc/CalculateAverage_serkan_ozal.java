@@ -416,7 +416,7 @@ public class CalculateAverage_serkan_ozal {
                     regionPtr1++;
                 }
                 if (keyLength2 == BYTE_SPECIES_SIZE) {
-                    regionPtr1--;
+                    regionPtr2--;
                     for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
                         ;
                     keyLength2 = (int) (regionPtr2 - keyStartPtr2);
