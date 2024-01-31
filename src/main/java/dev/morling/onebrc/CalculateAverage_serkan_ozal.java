@@ -846,8 +846,12 @@ public class CalculateAverage_serkan_ozal {
             int sumOffset = entryOffset + VALUE_SUM_OFFSET;
 
             U.putInt(data, countOffset, U.getInt(data, countOffset) + 1);
-            U.putShort(data, minValueOffset, (short) Math.min(value, U.getShort(data, minValueOffset)));
-            U.putShort(data, maxValueOffset, (short) Math.max(value, U.getShort(data, maxValueOffset)));
+            if (value < U.getShort(data, minValueOffset)) {
+                U.putShort(data, minValueOffset, (short) value);
+            }
+            if (value > U.getShort(data, maxValueOffset)) {
+                U.putShort(data, maxValueOffset, (short) value);
+            }
             U.putLong(data, sumOffset, U.getLong(data, sumOffset) + value);
         }
 
