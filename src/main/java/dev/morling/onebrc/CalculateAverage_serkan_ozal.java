@@ -475,7 +475,7 @@ public class CalculateAverage_serkan_ozal {
                     entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
                 }
                 if (entryOffset2 == 0) {
-                    entryOffset2 = map.putKeyFast(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
+                    entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
                 }
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
