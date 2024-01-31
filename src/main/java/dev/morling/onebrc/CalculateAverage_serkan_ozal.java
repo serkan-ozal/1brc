@@ -380,6 +380,8 @@ public class CalculateAverage_serkan_ozal {
 
             long regionPtr1, regionPtr2;
 
+            byte[] data = map.data;
+
             // Read and process region - main
             // Inspired by: @jerrinot
             // - two lines at a time (according to my experiment, this is optimum value in terms of register spilling)
@@ -482,15 +484,15 @@ public class CalculateAverage_serkan_ozal {
                 int entryOffset1 = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx1;
                 int entryOffset2 = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx2;
 
-                int keySize1 = U.getInt(map.data, entryOffset1 + OpenMap.KEY_SIZE_OFFSET);
-                int keySize2 = U.getInt(map.data, entryOffset2 + OpenMap.KEY_SIZE_OFFSET);
+                int keySize1 = U.getInt(data, entryOffset1 + OpenMap.KEY_SIZE_OFFSET);
+                int keySize2 = U.getInt(data, entryOffset2 + OpenMap.KEY_SIZE_OFFSET);
 
                 if (keySize1 == 0 && keySize2 == 0) {
                     map.initKey(keyStartPtr1, keyLength1, entryOffset1);
                     map.initKey(keyStartPtr2, keyLength2, entryOffset2);
                 } else {
-                    ByteVector entryKeyVector1 = ByteVector.fromArray(BYTE_SPECIES, map.data, entryOffset1 + OpenMap.KEY_ARRAY_OFFSET);
-                    ByteVector entryKeyVector2 = ByteVector.fromArray(BYTE_SPECIES, map.data, entryOffset2 + OpenMap.KEY_ARRAY_OFFSET);
+                    ByteVector entryKeyVector1 = ByteVector.fromArray(BYTE_SPECIES, data, entryOffset1 + OpenMap.KEY_ARRAY_OFFSET);
+                    ByteVector entryKeyVector2 = ByteVector.fromArray(BYTE_SPECIES, data, entryOffset2 + OpenMap.KEY_ARRAY_OFFSET);
 
                     int eqCount1 = keyVector1.compare(VectorOperators.EQ, entryKeyVector1).trueCount();
                     int eqCount2 = keyVector2.compare(VectorOperators.EQ, entryKeyVector2).trueCount();
