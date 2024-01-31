@@ -492,11 +492,8 @@ public class CalculateAverage_serkan_ozal {
                     ByteVector entryKeyVector1 = ByteVector.fromArray(BYTE_SPECIES, map.data, entryOffset1 + OpenMap.KEY_ARRAY_OFFSET);
                     ByteVector entryKeyVector2 = ByteVector.fromArray(BYTE_SPECIES, map.data, entryOffset2 + OpenMap.KEY_ARRAY_OFFSET);
 
-                    VectorMask<Byte> vectorMask1 = keyVector1.compare(VectorOperators.EQ, entryKeyVector1);
-                    VectorMask<Byte> vectorMask2 = keyVector2.compare(VectorOperators.EQ, entryKeyVector2);
-
-                    int eqCount1 = vectorMask1.trueCount();
-                    int eqCount2 = vectorMask2.trueCount();
+                    int eqCount1 = keyVector1.compare(VectorOperators.EQ, entryKeyVector1).trueCount();
+                    int eqCount2 = keyVector2.compare(VectorOperators.EQ, entryKeyVector2).trueCount();
 
                     entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryOffset1, keySize1, eqCount1);
                     entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryOffset2, keySize2, eqCount2);
@@ -828,11 +825,14 @@ public class CalculateAverage_serkan_ozal {
 
         private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength,
                            int entryOffset, int keySize, int eqCount) {
+            if (keySize == keyLength
+                    && (
+                    eqCount == keyLength
+                            || keysEqual(keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET
+                    ))) {
+                return entryOffset;
+            }
             for (;;) {
-                if (keySize == keyLength
-                        && keysEqual(keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET, eqCount)) {
-                    return entryOffset;
-                }
                 entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK;
                 keySize = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
                 if (keySize == 0) {
@@ -846,6 +846,13 @@ public class CalculateAverage_serkan_ozal {
                 } else {
                     ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, entryOffset + KEY_ARRAY_OFFSET);
                     eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
+                    if (keySize == keyLength
+                            && (
+                            eqCount == keyLength
+                                    || keysEqual(keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET
+                            ))) {
+                        return entryOffset;
+                    }
                 }
             }
         }
@@ -892,14 +899,8 @@ public class CalculateAverage_serkan_ozal {
             return wordA == wordB;
         }
 
-        private boolean keysEqual(long keyStartAddress, int keyLength, int keyStartArrayOffset, int eqCount) {
-            // Use vectorized search for the comparison of keys.
-            // Since majority of the city names >= 8 bytes and <= 16 bytes,
-            // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
-            if (eqCount == keyLength) {
-                return true;
-            }
-            else if (keyLength <= BYTE_SPECIES_SIZE) {
+        private boolean keysEqual(long keyStartAddress, int keyLength, int keyStartArrayOffset) {
+            if (keyLength <= BYTE_SPECIES_SIZE) {
                 return false;
             }
 
