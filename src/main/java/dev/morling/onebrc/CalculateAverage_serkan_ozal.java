@@ -303,7 +303,7 @@ public class CalculateAverage_serkan_ozal {
 
                         doProcessRegion(regionStart, regionEnd);
                     }
-                    LockSupport.parkNanos(1);
+                    LockSupport.parkNanos(1000000);
                 }
 
                 if (VERBOSE) {
