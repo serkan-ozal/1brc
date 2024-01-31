@@ -480,10 +480,15 @@ public class CalculateAverage_serkan_ozal {
 
                 int entryOffset1 = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx1;
                 int entryOffset2 = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx2;
+
                 int keySize1 = U.getInt(map.data, entryOffset1 + OpenMap.KEY_SIZE_OFFSET);
+                ByteVector entryKeyVector1 = ByteVector.fromArray(BYTE_SPECIES, map.data, entryOffset1 + OpenMap.KEY_ARRAY_OFFSET);
+
                 int keySize2 = U.getInt(map.data, entryOffset2 + OpenMap.KEY_SIZE_OFFSET);
-                entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryOffset1, keySize1);
-                entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryOffset2, keySize2);
+                ByteVector entryKeyVector2 = ByteVector.fromArray(BYTE_SPECIES, map.data, entryOffset2 + OpenMap.KEY_ARRAY_OFFSET);
+
+                entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryOffset1, keySize1, entryKeyVector1);
+                entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryOffset2, keySize2, entryKeyVector2);
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Extract values by parsing and put them into map
@@ -809,7 +814,7 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength,
-                           int entryOffset, int keySize) {
+                           int entryOffset, int keySize, ByteVector entryKeyVector) {
             // Start searching from the calculated position
             // and continue until find an available slot in case of hash collision
             // TODO Prevent infinite loop if all the slots are in use for other keys
@@ -827,11 +832,17 @@ public class CalculateAverage_serkan_ozal {
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
+                if (keySize == keyLength
+                        && keysEqual(
+                                keyVector, keyStartAddress, keyLength,
+                                entryKeyVector, entryOffset + KEY_ARRAY_OFFSET)) {
                     return entryOffset;
                 }
                 entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK;
                 keySize = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
+                if (keySize != 0) {
+                    entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, entryOffset + KEY_ARRAY_OFFSET);
+                }
             }
         }
 
@@ -840,6 +851,48 @@ public class CalculateAverage_serkan_ozal {
             // Since majority of the city names >= 8 bytes and <= 16 bytes,
             // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
             ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
+            int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
+            if (eqCount == keyLength) {
+                return true;
+            }
+            else if (keyLength <= BYTE_SPECIES_SIZE) {
+                return false;
+            }
+
+            // Compare remaining parts of the keys
+
+            int normalizedKeyLength = keyLength;
+            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+                normalizedKeyLength = Integer.reverseBytes(normalizedKeyLength);
+            }
+
+            long keyStartOffset = keyStartArrayOffset + Unsafe.ARRAY_BYTE_BASE_OFFSET;
+            int alignedKeyLength = normalizedKeyLength & 0xFFFFFFF8;
+            int i;
+            for (i = BYTE_SPECIES_SIZE; i < alignedKeyLength; i += Long.BYTES) {
+                if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
+                    return false;
+                }
+            }
+
+            long wordA = U.getLong(keyStartAddress + i);
+            long wordB = U.getLong(data, keyStartOffset + i);
+            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+                wordA = Long.reverseBytes(wordA);
+                wordB = Long.reverseBytes(wordB);
+            }
+            int halfShift = (Long.BYTES - (normalizedKeyLength & 0x00000007)) << 2;
+            long mask = (0xFFFFFFFFFFFFFFFFL >>> halfShift) >> halfShift;
+            wordA = wordA & mask;
+            // No need to mask "wordB" (word from key in the map), because it is already padded with 0s
+            return wordA == wordB;
+        }
+
+        private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength,
+                                  ByteVector entryKeyVector, int keyStartArrayOffset) {
+            // Use vectorized search for the comparison of keys.
+            // Since majority of the city names >= 8 bytes and <= 16 bytes,
+            // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
             int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
             if (eqCount == keyLength) {
                 return true;
