@@ -352,9 +352,9 @@ public class CalculateAverage_serkan_ozal {
             int decimalSepPos = Long.numberOfTrailingZeros(~word & 0x10101000);
 
             // 2. level instruction set (no dependency between each other so can be run in parallel)
-            long designMask = ~(signed & 0xFF);
-            int shift = 28 - decimalSepPos;
             long nextPtr = regionPtr + (decimalSepPos >>> 3) + 3;
+            int shift = 28 - decimalSepPos;
+            long designMask = ~(signed & 0xFF);
 
             long digits = ((word & designMask) << shift) & 0x0F000F0F00L;
             long absValue = ((digits * 0x640a0001) >>> 32) & 0x3FF;
@@ -426,10 +426,10 @@ public class CalculateAverage_serkan_ozal {
                 // Read first words as they will be used while extracting values later
                 long word1 = U.getLong(regionPtr1);
                 long word2 = U.getLong(regionPtr2);
-//                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-//                    word1 = Long.reverseBytes(word1);
-//                    word2 = Long.reverseBytes(word2);
-//                }
+                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+                    word1 = Long.reverseBytes(word1);
+                    word2 = Long.reverseBytes(word2);
+                }
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Calculate key hashes and find entry indexes
