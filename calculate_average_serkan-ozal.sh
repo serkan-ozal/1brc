@@ -29,7 +29,7 @@ fi
 CONFIGS="USE_SHARED_ARENA=true USE_SHARED_REGION=true CLOSE_STDOUT_ON_RESULT=true REGION_COUNT=128"
 
 echo "Process started at $(date +%s%N | cut -b1-13)"
-VERBOSE=true REGION_COUNT=128 java $JAVA_OPTS --class-path target/average-1.0.0-SNAPSHOT.jar dev.morling.onebrc.CalculateAverage_serkan_ozal
+VERBOSE=true CLOSE_STDOUT_ON_RESULT=false REGION_COUNT=128 java $JAVA_OPTS --class-path target/average-1.0.0-SNAPSHOT.jar dev.morling.onebrc.CalculateAverage_serkan_ozal
 #eval "exec 3< <({ $CONFIGS java $JAVA_OPTS --class-path target/average-1.0.0-SNAPSHOT.jar dev.morling.onebrc.CalculateAverage_serkan_ozal; })"
 #read <&3 result
 #echo -e "$result"
