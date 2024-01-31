@@ -438,29 +438,29 @@ public class CalculateAverage_serkan_ozal {
                     y2 = U.getInt(regionPtr2 - 5);
                 }
                 else {
-                    if (keyLength1 >= Integer.BYTES) {
+                    if (keyLength1 > 3) {
                         x1 = U.getInt(keyStartPtr1);
-                        y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
+                        y1 = U.getInt(regionPtr1 - 5);
                     }
                     else {
                         x1 = U.getByte(keyStartPtr1);
-                        y1 = U.getByte(keyStartPtr1 + keyLength1 - Byte.BYTES);
+                        y1 = U.getByte(regionPtr1 - 2);
                     }
-                    if (keyLength2 >= Integer.BYTES) {
+                    if (keyLength2 > 3) {
                         x2 = U.getInt(keyStartPtr2);
-                        y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
+                        y2 = U.getInt(regionPtr2 - 5);
                     }
                     else {
                         x2 = U.getByte(keyStartPtr2);
-                        y2 = U.getByte(keyStartPtr2 + keyLength2 - Byte.BYTES);
+                        y2 = U.getByte(regionPtr2 - 5);
                     }
                 }
 
-                int keyHash1 = (Integer.rotateLeft(x1 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y1) * OpenMap.HASH_SEED;
-                int keyHash2 = (Integer.rotateLeft(x2 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y2) * OpenMap.HASH_SEED;
+                int keyHash1 = (Integer.rotateLeft(x1 * 0x9E3779B9, 5) ^ y1) * 0x9E3779B9;
+                int keyHash2 = (Integer.rotateLeft(x2 * 0x9E3779B9, 5) ^ y2) * 0x9E3779B9;
 
-                int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
-                int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
+                int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << 7;
+                int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << 7;
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Put keys and calculate entry offsets to put values
