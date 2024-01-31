@@ -483,10 +483,11 @@ public class CalculateAverage_serkan_ozal {
 
                 int keySize1 = U.getInt(map.data, entryOffset1 + OpenMap.KEY_SIZE_OFFSET);
                 ByteVector entryKeyVector1 = ByteVector.fromArray(BYTE_SPECIES, map.data, entryOffset1 + OpenMap.KEY_ARRAY_OFFSET);
-                int eqCount1 = keyVector1.compare(VectorOperators.EQ, entryKeyVector1).trueCount();
 
                 int keySize2 = U.getInt(map.data, entryOffset2 + OpenMap.KEY_SIZE_OFFSET);
                 ByteVector entryKeyVector2 = ByteVector.fromArray(BYTE_SPECIES, map.data, entryOffset2 + OpenMap.KEY_ARRAY_OFFSET);
+
+                int eqCount1 = keyVector1.compare(VectorOperators.EQ, entryKeyVector1).trueCount();
                 int eqCount2 = keyVector1.compare(VectorOperators.EQ, entryKeyVector2).trueCount();
 
                 entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryOffset1, keySize1, eqCount1);
