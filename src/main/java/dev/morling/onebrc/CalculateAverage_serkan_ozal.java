@@ -551,11 +551,10 @@ public class CalculateAverage_serkan_ozal {
 
             int value1 = extractValue(word1, decimalSepPos1);
             int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+            map.putValue(entryOffset1, value1);
 
             int value2 = extractValue(word1, decimalSepPos2);
             int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
-
-            map.putValue(entryOffset1, value1);
             map.putValue(entryOffset2, value2);
         }
 
