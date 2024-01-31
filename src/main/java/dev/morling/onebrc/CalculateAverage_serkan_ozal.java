@@ -422,16 +422,16 @@ public class CalculateAverage_serkan_ozal {
                 // Read first words as they will be used while extracting values later
                 long word1 = U.getLong(regionPtr1);
                 long word2 = U.getLong(regionPtr2);
-                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                    word1 = Long.reverseBytes(word1);
-                    word2 = Long.reverseBytes(word2);
-                }
+//                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+//                    word1 = Long.reverseBytes(word1);
+//                    word2 = Long.reverseBytes(word2);
+//                }
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Calculate key hashes and find entry indexes
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
                 int x1, y1, x2, y2;
-                if (keyLength1 >= Integer.BYTES && keyLength2 >= Integer.BYTES) {
+                if (keyLength1 > 3 && keyLength2 > 3) {
                     x1 = U.getInt(keyStartPtr1);
                     y1 = U.getInt(regionPtr1 - 5);
                     x2 = U.getInt(keyStartPtr2);
@@ -498,9 +498,9 @@ public class CalculateAverage_serkan_ozal {
                 int entryIdx1 = map.calculateEntryIndex(keyStartPtr1, keyLength1);
                 int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
                 long word1 = U.getLong(regionPtr1);
-                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                    word1 = Long.reverseBytes(word1);
-                }
+//                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+//                    word1 = Long.reverseBytes(word1);
+//                }
                 regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
             }
             while (regionPtr2 < regionEnd2) {
@@ -520,9 +520,9 @@ public class CalculateAverage_serkan_ozal {
                 int entryIdx2 = map.calculateEntryIndex(keyStartPtr2, keyLength2);
                 int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
                 long word2 = U.getLong(regionPtr2);
-                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                    word2 = Long.reverseBytes(word2);
-                }
+//                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+//                    word2 = Long.reverseBytes(word2);
+//                }
                 regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
             }
         }
@@ -776,9 +776,9 @@ public class CalculateAverage_serkan_ozal {
             // Compare remaining parts of the keys
 
             int normalizedKeyLength = keyLength;
-            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                normalizedKeyLength = Integer.reverseBytes(normalizedKeyLength);
-            }
+//            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+//                normalizedKeyLength = Integer.reverseBytes(normalizedKeyLength);
+//            }
 
             long keyStartOffset = keyStartArrayOffset + Unsafe.ARRAY_BYTE_BASE_OFFSET;
             int alignedKeyLength = normalizedKeyLength & 0xFFFFFFF8;
@@ -791,10 +791,10 @@ public class CalculateAverage_serkan_ozal {
 
             long wordA = U.getLong(keyStartAddress + i);
             long wordB = U.getLong(data, keyStartOffset + i);
-            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                wordA = Long.reverseBytes(wordA);
-                wordB = Long.reverseBytes(wordB);
-            }
+//            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+//                wordA = Long.reverseBytes(wordA);
+//                wordB = Long.reverseBytes(wordB);
+//            }
             int halfShift = (Long.BYTES - (normalizedKeyLength & 0x00000007)) << 2;
             long mask = (0xFFFFFFFFFFFFFFFFL >>> halfShift) >> halfShift;
             wordA = wordA & mask;
