@@ -394,10 +394,15 @@ public class CalculateAverage_serkan_ozal {
             // - most of the implementation is inlined
             // - so get the benefit of ILP (Instruction Level Parallelism) better
             for (regionPtr1 = regionStart1, regionPtr2 = regionStart2; regionPtr1 < regionEnd1 && regionPtr2 < regionEnd2;) {
+                int x1, y1, x2, y2;
+
                 // Search key/value separators and find keys' start and end positions
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
                 long keyStartPtr1 = regionPtr1;
                 long keyStartPtr2 = regionPtr2;
+
+                x1 = U.getInt(keyStartPtr1);
+                x2 = U.getInt(keyStartPtr2);
 
                 ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr1, NATIVE_BYTE_ORDER);
                 ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr2, NATIVE_BYTE_ORDER);
@@ -458,16 +463,13 @@ public class CalculateAverage_serkan_ozal {
 
                 // Calculate key hashes and find entry indexes
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                int x1, y1, x2, y2;
+
                 if (keyLength1 > 3 && keyLength2 > 3) {
-                    x1 = U.getInt(keyStartPtr1);
                     y1 = U.getInt(regionPtr1 - 5);
-                    x2 = U.getInt(keyStartPtr2);
                     y2 = U.getInt(regionPtr2 - 5);
                 }
                 else {
                     if (keyLength1 > 3) {
-                        x1 = U.getInt(keyStartPtr1);
                         y1 = U.getInt(regionPtr1 - 5);
                     }
                     else {
@@ -475,7 +477,6 @@ public class CalculateAverage_serkan_ozal {
                         y1 = U.getByte(regionPtr1 - 2);
                     }
                     if (keyLength2 > 3) {
-                        x2 = U.getInt(keyStartPtr2);
                         y2 = U.getInt(regionPtr2 - 5);
                     }
                     else {
