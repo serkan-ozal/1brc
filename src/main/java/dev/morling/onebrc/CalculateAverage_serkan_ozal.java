@@ -400,37 +400,52 @@ public class CalculateAverage_serkan_ozal {
                 long keyStartPtr2 = regionPtr2;
 
                 ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr1, NATIVE_BYTE_ORDER);
-                int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-
                 ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr2, NATIVE_BYTE_ORDER);
+
+                int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
                 int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
 
-                if (keyLength1 != BYTE_SPECIES_SIZE && keyLength2 != BYTE_SPECIES_SIZE) {
-                    regionPtr1 += (keyLength1 + 1);
-                    regionPtr2 += (keyLength2 + 1);
+                regionPtr1 += (keyLength1 + 1);
+                regionPtr2 += (keyLength2 + 1);
+
+                if (keyLength1 == BYTE_SPECIES_SIZE) {
+                    regionPtr1--;
+                    for (; U.getByte(regionPtr1) != KEY_VALUE_SEPARATOR; regionPtr1++)
+                        ;
+                    keyLength1 = (int) (regionPtr1 - keyStartPtr1);
+                    regionPtr1++;
                 }
-                else {
-                    if (keyLength1 != BYTE_SPECIES_SIZE) {
-                        regionPtr1 += (keyLength1 + 1);
-                    }
-                    else {
-                        regionPtr1 += BYTE_SPECIES_SIZE;
-                        for (; U.getByte(regionPtr1) != KEY_VALUE_SEPARATOR; regionPtr1++)
-                            ;
-                        keyLength1 = (int) (regionPtr1 - keyStartPtr1);
-                        regionPtr1++;
-                    }
-                    if (keyLength2 != BYTE_SPECIES_SIZE) {
-                        regionPtr2 += (keyLength2 + 1);
-                    }
-                    else {
-                        regionPtr2 += BYTE_SPECIES_SIZE;
-                        for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
-                            ;
-                        keyLength2 = (int) (regionPtr2 - keyStartPtr2);
-                        regionPtr2++;
-                    }
+                if (keyLength2 == BYTE_SPECIES_SIZE) {
+                    regionPtr2--;
+                    for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
+                        ;
+                    keyLength2 = (int) (regionPtr2 - keyStartPtr2);
+                    regionPtr2++;
                 }
+
+//                if (keyLength1 != BYTE_SPECIES_SIZE && keyLength2 != BYTE_SPECIES_SIZE) {
+//                    regionPtr1 += (keyLength1 + 1);
+//                    regionPtr2 += (keyLength2 + 1);
+//                }
+//                else {
+//                    if (keyLength1 != BYTE_SPECIES_SIZE) {
+//                        regionPtr1 += (keyLength1 + 1);
+//                    }
+//                    else {
+//                        regionPtr1 += BYTE_SPECIES_SIZE;
+//
+//                    }
+//                    if (keyLength2 != BYTE_SPECIES_SIZE) {
+//                        regionPtr2 += (keyLength2 + 1);
+//                    }
+//                    else {
+//                        regionPtr2 += BYTE_SPECIES_SIZE;
+//                        for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
+//                            ;
+//                        keyLength2 = (int) (regionPtr2 - keyStartPtr2);
+//                        regionPtr2++;
+//                    }
+//                }
 
                 // Read first words as they will be used while extracting values later
                 long word1 = U.getLong(regionPtr1);
