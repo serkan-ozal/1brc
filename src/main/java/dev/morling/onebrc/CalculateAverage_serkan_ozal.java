@@ -478,8 +478,6 @@ public class CalculateAverage_serkan_ozal {
                 }
                 int decimalSepPos1 = Long.numberOfTrailingZeros(~word1 & 0x10101000);
                 int decimalSepPos2 = Long.numberOfTrailingZeros(~word2 & 0x10101000);
-                regionPtr1 = regionPtr1 + (decimalSepPos1 >>> 3) + 3;
-                regionPtr2 = regionPtr2 + (decimalSepPos2 >>> 3) + 3;
                 int value1 = extractValue(word1, decimalSepPos1);
                 int value2 = extractValue(word2, decimalSepPos2);
 
@@ -488,6 +486,9 @@ public class CalculateAverage_serkan_ozal {
 
                 int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
                 map.putValue(entryOffset2, value2);
+
+                regionPtr1 = regionPtr1 + (decimalSepPos1 >>> 3) + 3;
+                regionPtr2 = regionPtr2 + (decimalSepPos2 >>> 3) + 3;
 
                 // Put extracted value into map
 
