@@ -16,7 +16,6 @@
 package dev.morling.onebrc;
 
 import jdk.incubator.vector.ByteVector;
-import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 import sun.misc.Unsafe;
@@ -380,8 +379,6 @@ public class CalculateAverage_serkan_ozal {
 
             long regionPtr1, regionPtr2;
 
-            byte[] data = map.data;
-
             // Read and process region - main
             // Inspired by: @jerrinot
             // - two lines at a time (according to my experiment, this is optimum value in terms of register spilling)
@@ -472,32 +469,19 @@ public class CalculateAverage_serkan_ozal {
 
                 // Put keys and calculate entry offsets to put values
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                int entryOffset1 = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx1;
-                int entryOffset2 = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx2;
-
-//                entryOffset1 = map.putKeyFast(keyVector1, keyStartPtr1, keyLength1, entryOffset1);
-//                entryOffset2 = map.putKeyFast(keyVector2, keyStartPtr2, keyLength2, entryOffset2);
-//                if (entryOffset1 == 0) {
-//                    entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryOffset1 + OpenMap.ENTRY_SIZE);
-//                }
-//                if (entryOffset2 == 0) {
-//                    entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryOffset2 + OpenMap.ENTRY_SIZE);
-//                }
-//
-                entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryOffset1);
-                regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
-
-                entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryOffset2);
-                regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
+                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Extract values by parsing and put them into map
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
+                regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
 
             // Read and process region - tail
-//            doProcessTail(regionPtr1, regionEnd1, regionPtr2, regionEnd2);
+            doProcessTail(regionPtr1, regionEnd1, regionPtr2, regionEnd2);
         }
 
         private void doProcessTail(long regionPtr1, long regionEnd1, long regionPtr2, long regionEnd2) {
@@ -755,33 +739,11 @@ public class CalculateAverage_serkan_ozal {
             return (keyHash & ENTRY_HASH_MASK) << ENTRY_SIZE_SHIFT;
         }
 
-        private int putKeyFast(ByteVector keyVector, long keyStartAddress, int keyLength, int entryOffset) {
-            int keySize = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
-            // Check whether current index is empty (no another key is inserted yet)
-            if (keySize == 0) {
-                // Initialize entry slot for new key
-                U.putShort(data, entryOffset + MIN_VALUE_OFFSET, Short.MAX_VALUE);
-                U.putShort(data, entryOffset + MAX_VALUE_OFFSET, Short.MIN_VALUE);
-                U.putInt(data, entryOffset + KEY_SIZE_OFFSET, keyLength);
-                U.copyMemory(null, keyStartAddress, data, entryOffset + KEY_OFFSET, keyLength);
-                entryOffsets[entryOffsetIdx++] = entryOffset;
-                return entryOffset;
-            }
-            // Check for hash collision (hashes are same, but keys are different).
-            // If there is no collision (both hashes and keys are equals), return current slot's offset.
-            // Otherwise, continue iterating until find an available slot.
-            if (keySize == keyLength
-                    && keysEqual(keyVector, keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
-                return entryOffset;
-            }
-            return 0;
-        }
-
-        private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength, int entryOffset) {
+        private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength, int entryIdx) {
             // Start searching from the calculated position
             // and continue until find an available slot in case of hash collision
             // TODO Prevent infinite loop if all the slots are in use for other keys
-            for (;; entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK) {
+            for (int entryOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx;; entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK) {
                 int keySize = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
                 // Check whether current index is empty (no another key is inserted yet)
                 if (keySize == 0) {
@@ -796,8 +758,7 @@ public class CalculateAverage_serkan_ozal {
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                if (keySize == keyLength
-                        && keysEqual(keyVector, keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
+                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
                     return entryOffset;
                 }
             }
