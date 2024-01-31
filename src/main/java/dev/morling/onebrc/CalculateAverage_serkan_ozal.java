@@ -485,13 +485,14 @@ public class CalculateAverage_serkan_ozal {
 //                }
 //
                 entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryOffset1);
+                regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
+
                 entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryOffset2);
+                regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Extract values by parsing and put them into map
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
-                regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
 
