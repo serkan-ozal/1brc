@@ -75,7 +75,7 @@ public class CalculateAverage_serkan_ozal {
     private static final int REGION_COUNT = 512; // getIntegerConfig("REGION_COUNT", -1);
     private static final boolean USE_SHARED_ARENA = true; // getBooleanConfig("USE_SHARED_ARENA", true);
     private static final boolean USE_SHARED_REGION = true; // getBooleanConfig("USE_SHARED_REGION", true);
-    private static final int MAP_CAPACITY = 1 << 16; // getIntegerConfig("MAP_CAPACITY", 1 << 17);
+    private static final int MAP_CAPACITY = 1 << 19; // getIntegerConfig("MAP_CAPACITY", 1 << 17);
     private static final boolean CLOSE_STDOUT_ON_RESULT = true; // getBooleanConfig("CLOSE_STDOUT_ON_RESULT", true);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -368,6 +368,7 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private void doProcessRegion(long regionStart, long regionEnd) {
+            final OpenMap M = map;
             final long size = regionEnd - regionStart;
             final long segmentSize = size / 2;
 
@@ -469,14 +470,14 @@ public class CalculateAverage_serkan_ozal {
 
                 // Put keys and calculate entry offsets to put values
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
-                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
+                int entryOffset1 = M.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+                int entryOffset2 = M.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Extract values by parsing and put them into map
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
-                regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
+                regionPtr1 = extractValue(regionPtr1, word1, M, entryOffset1);
+                regionPtr2 = extractValue(regionPtr2, word2, M, entryOffset2);
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
 
