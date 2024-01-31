@@ -471,12 +471,12 @@ public class CalculateAverage_serkan_ozal {
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
                 int entryOffset1 = map.putKeyFast(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
                 int entryOffset2 = map.putKeyFast(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
-//                if (entryOffset1 == 0) {
-//                    entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1 + OpenMap.ENTRY_SIZE);
-//                }
-//                if (entryOffset2 == 0) {
-//                    entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2 + OpenMap.ENTRY_SIZE);
-//                }
+                if (entryOffset1 == 0) {
+                    entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1 + OpenMap.ENTRY_SIZE);
+                }
+                if (entryOffset2 == 0) {
+                    entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2 + OpenMap.ENTRY_SIZE);
+                }
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Extract values by parsing and put them into map
