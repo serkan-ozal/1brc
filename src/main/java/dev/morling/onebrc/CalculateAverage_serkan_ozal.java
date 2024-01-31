@@ -764,8 +764,23 @@ public class CalculateAverage_serkan_ozal {
             if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
                 return entryOffset;
             } else {
-                return entryOffset + ENTRY_SIZE;
+                entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK;
+                keySize = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
+                // Check whether current index is empty (no another key is inserted yet)
+                if (keySize == 0) {
+                    // Initialize entry slot for new key
+                    U.putShort(data, entryOffset + MIN_VALUE_OFFSET, Short.MAX_VALUE);
+                    U.putShort(data, entryOffset + MAX_VALUE_OFFSET, Short.MIN_VALUE);
+                    U.putInt(data, entryOffset + KEY_SIZE_OFFSET, keyLength);
+                    U.copyMemory(null, keyStartAddress, data, entryOffset + KEY_OFFSET, keyLength);
+                    entryOffsets[entryOffsetIdx++] = entryOffset;
+                    return entryOffset;
+                }
+                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
+                    return entryOffset;
+                }
             }
+            return 0;
         }
 
         private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength, int entryIdx) {
