@@ -362,8 +362,6 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private void doProcessRegion(long regionStart, long regionEnd) {
-            final int vectorSize = BYTE_SPECIES.vectorByteSize();
-
             final long size = regionEnd - regionStart;
             final long segmentSize = size / 2;
 
@@ -392,26 +390,26 @@ public class CalculateAverage_serkan_ozal {
                 int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
                 int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
 
-                if (keyLength1 != vectorSize && keyLength2 != vectorSize) {
+                if (keyLength1 != BYTE_SPECIES_SIZE && keyLength2 != BYTE_SPECIES_SIZE) {
                     regionPtr1 += (keyLength1 + 1);
                     regionPtr2 += (keyLength2 + 1);
                 }
                 else {
-                    if (keyLength1 != vectorSize) {
+                    if (keyLength1 != BYTE_SPECIES_SIZE) {
                         regionPtr1 += (keyLength1 + 1);
                     }
                     else {
-                        regionPtr1 += vectorSize;
+                        regionPtr1 += BYTE_SPECIES_SIZE;
                         for (; U.getByte(regionPtr1) != KEY_VALUE_SEPARATOR; regionPtr1++)
                             ;
                         keyLength1 = (int) (regionPtr1 - keyStartPtr1);
                         regionPtr1++;
                     }
-                    if (keyLength2 != vectorSize) {
+                    if (keyLength2 != BYTE_SPECIES_SIZE) {
                         regionPtr2 += (keyLength2 + 1);
                     }
                     else {
-                        regionPtr2 += vectorSize;
+                        regionPtr2 += BYTE_SPECIES_SIZE;
                         for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
                             ;
                         keyLength2 = (int) (regionPtr2 - keyStartPtr2);
@@ -477,19 +475,19 @@ public class CalculateAverage_serkan_ozal {
             }
 
             // Read and process region - tail
-            doProcessTail(regionPtr1, regionEnd1, regionPtr2, regionEnd2, vectorSize);
+            doProcessTail(regionPtr1, regionEnd1, regionPtr2, regionEnd2);
         }
 
-        private void doProcessTail(long regionPtr1, long regionEnd1, long regionPtr2, long regionEnd2, int vectorSize) {
+        private void doProcessTail(long regionPtr1, long regionEnd1, long regionPtr2, long regionEnd2) {
             while (regionPtr1 < regionEnd1) {
                 long keyStartPtr1 = regionPtr1;
                 ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr1, NATIVE_BYTE_ORDER);
                 int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-                if (keyLength1 != vectorSize) {
+                if (keyLength1 != BYTE_SPECIES_SIZE) {
                     regionPtr1 += (keyLength1 + 1);
                 }
                 else {
-                    regionPtr1 += vectorSize;
+                    regionPtr1 += BYTE_SPECIES_SIZE;
                     for (; U.getByte(regionPtr1) != KEY_VALUE_SEPARATOR; regionPtr1++)
                         ;
                     keyLength1 = (int) (regionPtr1 - keyStartPtr1);
@@ -507,11 +505,11 @@ public class CalculateAverage_serkan_ozal {
                 long keyStartPtr2 = regionPtr2;
                 ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr2, NATIVE_BYTE_ORDER);
                 int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-                if (keyLength2 != vectorSize) {
+                if (keyLength2 != BYTE_SPECIES_SIZE) {
                     regionPtr2 += (keyLength2 + 1);
                 }
                 else {
-                    regionPtr2 += vectorSize;
+                    regionPtr2 += BYTE_SPECIES_SIZE;
                     for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
                         ;
                     keyLength2 = (int) (regionPtr2 - keyStartPtr2);
