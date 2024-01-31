@@ -783,42 +783,43 @@ public class CalculateAverage_serkan_ozal {
             // Use vectorized search for the comparison of keys.
             // Since majority of the city names >= 8 bytes and <= 16 bytes,
             // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
-//            ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
-//            int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
-//            if (eqCount == keyLength) {
-//                return true;
-//            }
-//            else if (keyLength <= BYTE_SPECIES_SIZE) {
-//                return false;
-//            }
+            ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
+            int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
+            if (eqCount == keyLength) {
+                return true;
+            }
+            else if (keyLength <= BYTE_SPECIES_SIZE) {
+                return false;
+            }
+            return true;
 
             // Compare remaining parts of the keys
 
-            int normalizedKeyLength = keyLength;
-            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                normalizedKeyLength = Integer.reverseBytes(normalizedKeyLength);
-            }
-
-            long keyStartOffset = keyStartArrayOffset + Unsafe.ARRAY_BYTE_BASE_OFFSET;
-            int alignedKeyLength = normalizedKeyLength & 0xFFFFFFF8;
-            int i;
-            for (i = 0; i < alignedKeyLength; i += Long.BYTES) {
-                if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
-                    return false;
-                }
-            }
-
-            long wordA = U.getLong(keyStartAddress + i);
-            long wordB = U.getLong(data, keyStartOffset + i);
-            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                wordA = Long.reverseBytes(wordA);
-                wordB = Long.reverseBytes(wordB);
-            }
-            int halfShift = (Long.BYTES - (normalizedKeyLength & 0x00000007)) << 2;
-            long mask = (0xFFFFFFFFFFFFFFFFL >>> halfShift) >> halfShift;
-            wordA = wordA & mask;
-            // No need to mask "wordB" (word from key in the map), because it is already padded with 0s
-            return wordA == wordB;
+//            int normalizedKeyLength = keyLength;
+//            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+//                normalizedKeyLength = Integer.reverseBytes(normalizedKeyLength);
+//            }
+//
+//            long keyStartOffset = keyStartArrayOffset + Unsafe.ARRAY_BYTE_BASE_OFFSET;
+//            int alignedKeyLength = normalizedKeyLength & 0xFFFFFFF8;
+//            int i;
+//            for (i = BYTE_SPECIES_SIZE; i < alignedKeyLength; i += Long.BYTES) {
+//                if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
+//                    return false;
+//                }
+//            }
+//
+//            long wordA = U.getLong(keyStartAddress + i);
+//            long wordB = U.getLong(data, keyStartOffset + i);
+//            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+//                wordA = Long.reverseBytes(wordA);
+//                wordB = Long.reverseBytes(wordB);
+//            }
+//            int halfShift = (Long.BYTES - (normalizedKeyLength & 0x00000007)) << 2;
+//            long mask = (0xFFFFFFFFFFFFFFFFL >>> halfShift) >> halfShift;
+//            wordA = wordA & mask;
+//            // No need to mask "wordB" (word from key in the map), because it is already padded with 0s
+//            return wordA == wordB;
         }
 
         private void putValue(int entryOffset, int value) {
