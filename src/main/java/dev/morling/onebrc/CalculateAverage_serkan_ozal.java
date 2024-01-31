@@ -761,7 +761,7 @@ public class CalculateAverage_serkan_ozal {
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, entryOffset + KEY_ARRAY_OFFSET));
+                ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, entryOffset + KEY_ARRAY_OFFSET);
                 int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
                 if (eqCount == keyLength) {
                     return entryOffset;
