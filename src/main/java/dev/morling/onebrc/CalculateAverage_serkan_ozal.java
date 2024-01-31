@@ -75,7 +75,7 @@ public class CalculateAverage_serkan_ozal {
     private static final int REGION_COUNT = 512; // getIntegerConfig("REGION_COUNT", -1);
     private static final boolean USE_SHARED_ARENA = true; // getBooleanConfig("USE_SHARED_ARENA", true);
     private static final boolean USE_SHARED_REGION = true; // getBooleanConfig("USE_SHARED_REGION", true);
-    private static final int MAP_CAPACITY = 1 << 19; // getIntegerConfig("MAP_CAPACITY", 1 << 17);
+    private static final int MAP_CAPACITY = 1 << 16; // getIntegerConfig("MAP_CAPACITY", 1 << 17);
     private static final boolean CLOSE_STDOUT_ON_RESULT = true; // getBooleanConfig("CLOSE_STDOUT_ON_RESULT", true);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
