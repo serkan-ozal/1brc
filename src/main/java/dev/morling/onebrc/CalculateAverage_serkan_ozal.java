@@ -16,6 +16,7 @@
 package dev.morling.onebrc;
 
 import jdk.incubator.vector.ByteVector;
+import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 import sun.misc.Unsafe;
@@ -491,8 +492,11 @@ public class CalculateAverage_serkan_ozal {
                     ByteVector entryKeyVector1 = ByteVector.fromArray(BYTE_SPECIES, map.data, entryOffset1 + OpenMap.KEY_ARRAY_OFFSET);
                     ByteVector entryKeyVector2 = ByteVector.fromArray(BYTE_SPECIES, map.data, entryOffset2 + OpenMap.KEY_ARRAY_OFFSET);
 
-                    int eqCount1 = keyVector1.compare(VectorOperators.EQ, entryKeyVector1).trueCount();
-                    int eqCount2 = keyVector2.compare(VectorOperators.EQ, entryKeyVector2).trueCount();
+                    VectorMask<Byte> vectorMask1 = keyVector1.compare(VectorOperators.EQ, entryKeyVector1);
+                    VectorMask<Byte> vectorMask2 = keyVector2.compare(VectorOperators.EQ, entryKeyVector2);
+
+                    int eqCount1 = vectorMask1.trueCount();
+                    int eqCount2 = vectorMask2.trueCount();
 
                     entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryOffset1, keySize1, eqCount1);
                     entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryOffset2, keySize2, eqCount2);
