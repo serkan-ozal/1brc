@@ -405,47 +405,29 @@ public class CalculateAverage_serkan_ozal {
                 int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
                 int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
 
-                regionPtr1 += (keyLength1 + 1);
-                regionPtr2 += (keyLength2 + 1);
-
-                if (keyLength1 == BYTE_SPECIES_SIZE) {
-                    regionPtr1--;
-                    for (; U.getByte(regionPtr1) != KEY_VALUE_SEPARATOR; regionPtr1++)
-                        ;
-                    keyLength1 = (int) (regionPtr1 - keyStartPtr1);
-                    regionPtr1++;
+                if (keyLength1 != BYTE_SPECIES_SIZE && keyLength2 != BYTE_SPECIES_SIZE) {
+                    regionPtr1 += (keyLength1 + 1);
+                    regionPtr2 += (keyLength2 + 1);
                 }
-                if (keyLength2 == BYTE_SPECIES_SIZE) {
-                    regionPtr2--;
-                    for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
-                        ;
-                    keyLength2 = (int) (regionPtr2 - keyStartPtr2);
-                    regionPtr2++;
-                }
+                else {
+                    if (keyLength1 != BYTE_SPECIES_SIZE) {
+                        regionPtr1 += (keyLength1 + 1);
+                    }
+                    else {
+                        regionPtr1 += BYTE_SPECIES_SIZE;
 
-//                if (keyLength1 != BYTE_SPECIES_SIZE && keyLength2 != BYTE_SPECIES_SIZE) {
-//                    regionPtr1 += (keyLength1 + 1);
-//                    regionPtr2 += (keyLength2 + 1);
-//                }
-//                else {
-//                    if (keyLength1 != BYTE_SPECIES_SIZE) {
-//                        regionPtr1 += (keyLength1 + 1);
-//                    }
-//                    else {
-//                        regionPtr1 += BYTE_SPECIES_SIZE;
-//
-//                    }
-//                    if (keyLength2 != BYTE_SPECIES_SIZE) {
-//                        regionPtr2 += (keyLength2 + 1);
-//                    }
-//                    else {
-//                        regionPtr2 += BYTE_SPECIES_SIZE;
-//                        for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
-//                            ;
-//                        keyLength2 = (int) (regionPtr2 - keyStartPtr2);
-//                        regionPtr2++;
-//                    }
-//                }
+                    }
+                    if (keyLength2 != BYTE_SPECIES_SIZE) {
+                        regionPtr2 += (keyLength2 + 1);
+                    }
+                    else {
+                        regionPtr2 += BYTE_SPECIES_SIZE;
+                        for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
+                            ;
+                        keyLength2 = (int) (regionPtr2 - keyStartPtr2);
+                        regionPtr2++;
+                    }
+                }
 
                 // Read first words as they will be used while extracting values later
                 long word1 = U.getLong(regionPtr1);
@@ -458,40 +440,37 @@ public class CalculateAverage_serkan_ozal {
 
                 // Calculate key hashes and find entry indexes
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                int x1, y1, x2, y2;
-//                if (keyLength1 > 3 && keyLength2 > 3) {
-//                    x1 = U.getInt(keyStartPtr1);
-//                    y1 = U.getInt(regionPtr1 - 5);
-//                    x2 = U.getInt(keyStartPtr2);
-//                    y2 = U.getInt(regionPtr2 - 5);
-//                }
-//                else {
-//                    if (keyLength1 > 3) {
-//                        x1 = U.getInt(keyStartPtr1);
-//                        y1 = U.getInt(regionPtr1 - 5);
-//                    }
-//                    else {
-//                        x1 = U.getByte(keyStartPtr1);
-//                        y1 = U.getByte(regionPtr1 - 2);
-//                    }
-//                    if (keyLength2 > 3) {
-//                        x2 = U.getInt(keyStartPtr2);
-//                        y2 = U.getInt(regionPtr2 - 5);
-//                    }
-//                    else {
-//                        x2 = U.getByte(keyStartPtr2);
-//                        y2 = U.getByte(regionPtr2 - 2);
-//                    }
-//                }
-//
-//                int keyHash1 = (Integer.rotateLeft(x1 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y1) * OpenMap.HASH_SEED;
-//                int keyHash2 = (Integer.rotateLeft(x2 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y2) * OpenMap.HASH_SEED;
-//
-//                int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
-//                int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
+                int x1, y1, x2, y2;
+                if (keyLength1 > 3 && keyLength2 > 3) {
+                    x1 = U.getInt(keyStartPtr1);
+                    y1 = U.getInt(regionPtr1 - 5);
+                    x2 = U.getInt(keyStartPtr2);
+                    y2 = U.getInt(regionPtr2 - 5);
+                }
+                else {
+                    if (keyLength1 > 3) {
+                        x1 = U.getInt(keyStartPtr1);
+                        y1 = U.getInt(regionPtr1 - 5);
+                    }
+                    else {
+                        x1 = U.getByte(keyStartPtr1);
+                        y1 = U.getByte(regionPtr1 - 2);
+                    }
+                    if (keyLength2 > 3) {
+                        x2 = U.getInt(keyStartPtr2);
+                        y2 = U.getInt(regionPtr2 - 5);
+                    }
+                    else {
+                        x2 = U.getByte(keyStartPtr2);
+                        y2 = U.getByte(regionPtr2 - 2);
+                    }
+                }
 
-                int entryIdx1 = map.calculateEntryIndex(keyStartPtr1, keyLength1);
-                int entryIdx2 = map.calculateEntryIndex(keyStartPtr2, keyLength2);
+                int keyHash1 = (Integer.rotateLeft(x1 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y1) * OpenMap.HASH_SEED;
+                int keyHash2 = (Integer.rotateLeft(x2 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y2) * OpenMap.HASH_SEED;
+
+                int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
+                int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Put keys and calculate entry offsets to put values
@@ -804,14 +783,14 @@ public class CalculateAverage_serkan_ozal {
             // Use vectorized search for the comparison of keys.
             // Since majority of the city names >= 8 bytes and <= 16 bytes,
             // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
-            ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
-            int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
-            if (eqCount == keyLength) {
-                return true;
-            }
-            else if (keyLength <= BYTE_SPECIES_SIZE) {
-                return false;
-            }
+//            ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
+//            int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
+//            if (eqCount == keyLength) {
+//                return true;
+//            }
+//            else if (keyLength <= BYTE_SPECIES_SIZE) {
+//                return false;
+//            }
 
             // Compare remaining parts of the keys
 
@@ -823,7 +802,7 @@ public class CalculateAverage_serkan_ozal {
             long keyStartOffset = keyStartArrayOffset + Unsafe.ARRAY_BYTE_BASE_OFFSET;
             int alignedKeyLength = normalizedKeyLength & 0xFFFFFFF8;
             int i;
-            for (i = BYTE_SPECIES_SIZE; i < alignedKeyLength; i += Long.BYTES) {
+            for (i = 0; i < alignedKeyLength; i += Long.BYTES) {
                 if (U.getLong(keyStartAddress + i) != U.getLong(data, keyStartOffset + i)) {
                     return false;
                 }
