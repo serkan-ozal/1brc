@@ -37,14 +37,13 @@ import java.util.Queue;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -132,17 +131,18 @@ public class CalculateAverage_serkan_ozal {
             }
 
             Queue<Task> sharedTasks = new ConcurrentLinkedQueue<>();
+            Request request = new Request(arena, sharedTasks, result);
 
-            // Start region processors to process tasks for each region
             List<Future<Response>> futures = new ArrayList<>(regionCount);
-            for (int i = 0; i < concurrency / 2; i++) {
-                Request request = new Request(arena, sharedTasks, result);
+            // Start region processors to process tasks for each region
+            for (int i = 0; i < concurrency; i++) {
                 RegionProcessor regionProcessor = createRegionProcessor(request);
                 Future<Response> future = executor.submit(regionProcessor);
                 futures.add(future);
             }
 
             // Split whole file into regions and create tasks for each region
+            List<Task> tasks = new ArrayList<>(regionCount);
             for (int i = 0; i < regionCount; i++) {
                 long endPos = Math.min(fileSize, startPos + regionSize);
                 // Lines might split into different regions.
@@ -151,18 +151,12 @@ public class CalculateAverage_serkan_ozal {
                         ? findClosestLineEnd(fc, endPos, lineBuffer)
                         : fileSize;
                 Task task = new Task(fc, region, startPos, closestLineEndPos);
-                sharedTasks.offer(task);
+                tasks.add(task);
                 startPos = closestLineEndPos;
             }
 
-            for (int i = concurrency / 2; i < concurrency; i++) {
-                Request request = new Request(arena, sharedTasks, result);
-                RegionProcessor regionProcessor = createRegionProcessor(request);
-                Future<Response> future = executor.submit(regionProcessor);
-                futures.add(future);
-            }
-
-            result.allTasksSubmitted.set(true);
+            sharedTasks.addAll(tasks);
+            result.started.countDown();
 
             // Wait processors to complete
             for (Future<Response> future : futures) {
@@ -292,18 +286,17 @@ public class CalculateAverage_serkan_ozal {
             // If no shared global memory arena is used, create and use its own local memory arena
             Arena a = arenaGiven ? arena : Arena.ofConfined();
             try {
-                while (!result.allTasksSubmitted.get()) {
-                    for (Task task = sharedTasks.poll(); task != null; task = sharedTasks.poll()) {
-                        boolean regionGiven = task.region != null;
-                        MemorySegment r = regionGiven
-                                ? task.region
-                                : task.fileChannel.map(FileChannel.MapMode.READ_ONLY, task.start, task.size, a);
-                        long regionStart = regionGiven ? (r.address() + task.start) : r.address();
-                        long regionEnd = regionStart + task.size;
+                result.started.await();
 
-                        doProcessRegion(regionStart, regionEnd);
-                    }
-                    LockSupport.parkNanos(1000000);
+                for (Task task = sharedTasks.poll(); task != null; task = sharedTasks.poll()) {
+                    boolean regionGiven = task.region != null;
+                    MemorySegment r = regionGiven
+                            ? task.region
+                            : task.fileChannel.map(FileChannel.MapMode.READ_ONLY, task.start, task.size, a);
+                    long regionStart = regionGiven ? (r.address() + task.start) : r.address();
+                    long regionEnd = regionStart + task.size;
+
+                    doProcessRegion(regionStart, regionEnd);
                 }
 
                 if (VERBOSE) {
@@ -639,11 +632,10 @@ public class CalculateAverage_serkan_ozal {
 
         private final Lock lock = new ReentrantLock();
         private final Map<String, KeyResult> resultMap;
-        private final AtomicBoolean allTasksSubmitted;
+        private final CountDownLatch started = new CountDownLatch(1);
 
         private Result() {
             this.resultMap = new TreeMap<>();
-            this.allTasksSubmitted = new AtomicBoolean(false);
         }
 
         private boolean tryMergeInto(OpenMap map) {
