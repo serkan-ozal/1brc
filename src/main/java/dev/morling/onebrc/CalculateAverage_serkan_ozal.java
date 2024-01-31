@@ -367,6 +367,16 @@ public class CalculateAverage_serkan_ozal {
             return nextPtr;
         }
 
+        private int extractValue(long word, int decimalSepPos) {
+            long signed = (~word << 59) >> 63;
+            int shift = 28 - decimalSepPos;
+            long designMask = ~(signed & 0xFF);
+
+            long digits = ((word & designMask) << shift) & 0x0F000F0F00L;
+            long absValue = ((digits * 0x640a0001) >>> 32) & 0x3FF;
+            return (int) ((absValue ^ signed) - signed);
+        }
+
         private void doProcessRegion(long regionStart, long regionEnd) {
             final long size = regionEnd - regionStart;
             final long segmentSize = size / 2;
@@ -467,17 +477,35 @@ public class CalculateAverage_serkan_ozal {
                 int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                // Put keys and calculate entry offsets to put values
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
-                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                int decimalSepPos1 = Long.numberOfTrailingZeros(~word1 & 0x10101000);
+                int decimalSepPos2 = Long.numberOfTrailingZeros(~word2 & 0x10101000);
+                long nextPtr1 = regionPtr1 + (decimalSepPos1 >>> 3) + 3;
+                long nextPtr2 = regionPtr2 + (decimalSepPos2 >>> 3) + 3;
+                int value1 = extractValue(word1, decimalSepPos1);
+                int value2 = extractValue(word2, decimalSepPos2);
 
-                // Extract values by parsing and put them into map
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
-                regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+                map.putValue(entryOffset1, value1);
+
+                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
+                map.putValue(entryOffset2, value2);
+
+                regionPtr1 = nextPtr1;
+                regionPtr2 = nextPtr2;
+
+                // Put extracted value into map
+
+//                // Put keys and calculate entry offsets to put values
+//                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+//                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
+//                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//                // Extract values by parsing and put them into map
+//                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
+//                regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
+//                ////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
 
             // Read and process region - tail
