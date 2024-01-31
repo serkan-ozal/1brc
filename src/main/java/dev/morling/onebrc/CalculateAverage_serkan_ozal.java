@@ -346,10 +346,13 @@ public class CalculateAverage_serkan_ozal {
         // Credits: merykitty
         private long extractValue(long regionPtr, long word, OpenMap map, int entryOffset) {
             // Parse and extract value
-            int decimalSepPos = Long.numberOfTrailingZeros(~word & 0x10101000);
-            int shift = 28 - decimalSepPos;
             long signed = (~word << 59) >> 63;
+            int decimalSepPos = Long.numberOfTrailingZeros(~word & 0x10101000);
+
             long designMask = ~(signed & 0xFF);
+            int shift = 28 - decimalSepPos;
+            long nextPtr = regionPtr + (decimalSepPos >>> 3) + 3;
+
             long digits = ((word & designMask) << shift) & 0x0F000F0F00L;
             long absValue = ((digits * 0x640a0001) >>> 32) & 0x3FF;
             int value = (int) ((absValue ^ signed) - signed);
@@ -358,7 +361,7 @@ public class CalculateAverage_serkan_ozal {
             map.putValue(entryOffset, value);
 
             // Return new position
-            return regionPtr + (decimalSepPos >>> 3) + 3;
+            return nextPtr;
         }
 
         private void doProcessRegion(long regionStart, long regionEnd) {
