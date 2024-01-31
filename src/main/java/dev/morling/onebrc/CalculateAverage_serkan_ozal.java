@@ -480,8 +480,8 @@ public class CalculateAverage_serkan_ozal {
 
                 // Read first words as they will be used while extracting values later
 
-                processKeyAndValue(keyVector1, keyStartPtr1, keyLength1, word1, decimalSepPos1,
-                                   keyVector2, keyStartPtr2, keyLength2, word2, decimalSepPos2);
+                processKeyAndValue(regionPtr1, keyVector1, keyStartPtr1, keyLength1, word1, decimalSepPos1,
+                                   regionPtr2, keyVector2, keyStartPtr2, keyLength2, word2, decimalSepPos2);
 //                int value1 = extractValue(word1, decimalSepPos1);
 //                int value2 = extractValue(word2, decimalSepPos2);
 //
@@ -513,33 +513,33 @@ public class CalculateAverage_serkan_ozal {
 //            doProcessTail(regionPtr1, regionEnd1, regionPtr2, regionEnd2);
         }
 
-        private void processKeyAndValue(ByteVector keyVector1, long keyStartPtr1, int keyLength1, long word1, int decimalSepPos1,
-                                        ByteVector keyVector2, long keyStartPtr2, int keyLength2, long word2, int decimalSepPos2) {
+        private void processKeyAndValue(long regionPtr1, ByteVector keyVector1, long keyStartPtr1, int keyLength1, long word1, int decimalSepPos1,
+                                        long regionPtr2, ByteVector keyVector2, long keyStartPtr2, int keyLength2, long word2, int decimalSepPos2) {
             // Calculate key hashes and find entry indexes
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
             int x1, y1, x2, y2;
             if (keyLength1 > 3 && keyLength2 > 3) {
                 x1 = U.getInt(keyStartPtr1);
-                y1 = U.getInt(keyStartPtr1 + keyLength1 - 4);
+                y1 = U.getInt(regionPtr1 - 5);
                 x2 = U.getInt(keyStartPtr2);
-                y2 = U.getInt(keyStartPtr2 + keyLength2 - 4);
+                y2 = U.getInt(regionPtr2 - 5);
             }
             else {
                 if (keyLength1 > 3) {
                     x1 = U.getInt(keyStartPtr1);
-                    y1 = U.getInt(keyStartPtr1 + keyLength1 - 4);
+                    y1 = U.getInt(regionPtr1 - 5);
                 }
                 else {
                     x1 = U.getByte(keyStartPtr1);
-                    y1 = U.getByte(keyStartPtr1 + keyLength1 - 1);
+                    y1 = U.getByte(regionPtr1 - 2);
                 }
                 if (keyLength2 > 3) {
                     x2 = U.getInt(keyStartPtr2);
-                    y2 = U.getInt(keyStartPtr2 + keyLength2 - 4);
+                    y2 = U.getInt(regionPtr2 - 5);
                 }
                 else {
                     x2 = U.getByte(keyStartPtr2);
-                    y2 = U.getByte(keyStartPtr2 + keyLength2 - 1);
+                    y2 = U.getByte(regionPtr2 - 2);
                 }
             }
 
