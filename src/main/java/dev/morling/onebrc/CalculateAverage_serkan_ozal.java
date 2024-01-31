@@ -422,6 +422,14 @@ public class CalculateAverage_serkan_ozal {
                         regionPtr2++;
                     }
                 }
+
+                // Read first words as they will be used while extracting values later
+                long word1 = U.getLong(regionPtr1);
+                long word2 = U.getLong(regionPtr2);
+                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+                    word1 = Long.reverseBytes(word1);
+                    word2 = Long.reverseBytes(word2);
+                }
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Calculate key hashes and find entry indexes
@@ -452,14 +460,6 @@ public class CalculateAverage_serkan_ozal {
                     }
                 }
 
-                // Read first words as they will be used while extracting values later
-                long word1 = U.getLong(regionPtr1);
-                long word2 = U.getLong(regionPtr2);
-                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                    word1 = Long.reverseBytes(word1);
-                    word2 = Long.reverseBytes(word2);
-                }
-
                 int keyHash1 = (Integer.rotateLeft(x1 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y1) * OpenMap.HASH_SEED;
                 int keyHash2 = (Integer.rotateLeft(x2 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y2) * OpenMap.HASH_SEED;
 
@@ -470,12 +470,13 @@ public class CalculateAverage_serkan_ozal {
                 // Put keys and calculate entry offsets to put values
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
                 int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+                regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
+
                 int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Extract values by parsing and put them into map
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
                 regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
             }
