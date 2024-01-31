@@ -44,6 +44,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -302,6 +303,7 @@ public class CalculateAverage_serkan_ozal {
 
                         doProcessRegion(regionStart, regionEnd);
                     }
+                    LockSupport.parkNanos(1);
                 }
 
                 if (VERBOSE) {
