@@ -469,8 +469,14 @@ public class CalculateAverage_serkan_ozal {
 
                 // Put keys and calculate entry offsets to put values
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
-                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
+                int entryOffset1 = map.putKeyFast(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+                int entryOffset2 = map.putKeyFast(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
+                if (entryOffset1 == 0) {
+                    entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
+                }
+                if (entryOffset2 == 0) {
+                    entryOffset2 = map.putKeyFast(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
+                }
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Extract values by parsing and put them into map
@@ -739,10 +745,7 @@ public class CalculateAverage_serkan_ozal {
             return (keyHash & ENTRY_HASH_MASK) << ENTRY_SIZE_SHIFT;
         }
 
-        private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength, int entryIdx) {
-            // Start searching from the calculated position
-            // and continue until find an available slot in case of hash collision
-
+        private int putKeyFast(ByteVector keyVector, long keyStartAddress, int keyLength, int entryIdx) {
             int entryOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx;
             int keySize = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
             // Check whether current index is empty (no another key is inserted yet)
@@ -760,11 +763,17 @@ public class CalculateAverage_serkan_ozal {
             // Otherwise, continue iterating until find an available slot.
             if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
                 return entryOffset;
+            } else {
+                return 0;
             }
+        }
 
+        private int putKey(ByteVector keyVector, long keyStartAddress, int keyLength, int entryIdx) {
+            // Start searching from the calculated position
+            // and continue until find an available slot in case of hash collision
             // TODO Prevent infinite loop if all the slots are in use for other keys
-            for (entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK;; entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK) {
-                keySize = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
+            for (int entryOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx; entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK) {
+                int keySize = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
                 // Check whether current index is empty (no another key is inserted yet)
                 if (keySize == 0) {
                     // Initialize entry slot for new key
