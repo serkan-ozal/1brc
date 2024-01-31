@@ -549,8 +549,18 @@ public class CalculateAverage_serkan_ozal {
             int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
             int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
 
-            int value1 = extractValue(word1, decimalSepPos1);
-            int value2 = extractValue(word2, decimalSepPos2);
+            long signed1 = (~word1 << 59) >> 63;
+            long signed2 = (~word2 << 59) >> 63;
+            int shift1 = 28 - decimalSepPos1;
+            int shift2 = 28 - decimalSepPos2;
+            long designMask1 = ~(signed1 & 0xFF);
+            long designMask2 = ~(signed2 & 0xFF);
+            long digits1 = ((word2 & designMask1) << shift1) & 0x0F000F0F00L;
+            long digits2 = ((word2 & designMask2) << shift2) & 0x0F000F0F00L;
+            long absValue1 = ((digits1 * 0x640a0001) >>> 32) & 0x3FF;
+            long absValue2 = ((digits2 * 0x640a0001) >>> 32) & 0x3FF;
+            int value1 = (int) ((absValue1 ^ signed1) - signed1);
+            int value2 = (int) ((absValue2 ^ signed2) - signed2);
 
             int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
             map.putValue(entryOffset1, value1);
