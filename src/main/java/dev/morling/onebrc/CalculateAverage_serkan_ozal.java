@@ -422,14 +422,6 @@ public class CalculateAverage_serkan_ozal {
                         regionPtr2++;
                     }
                 }
-
-                // Read first words as they will be used while extracting values later
-                long word1 = U.getLong(regionPtr1);
-                long word2 = U.getLong(regionPtr2);
-                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                    word1 = Long.reverseBytes(word1);
-                    word2 = Long.reverseBytes(word2);
-                }
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Calculate key hashes and find entry indexes
@@ -458,6 +450,14 @@ public class CalculateAverage_serkan_ozal {
                         x2 = U.getByte(keyStartPtr2);
                         y2 = U.getByte(regionPtr2 - 2);
                     }
+                }
+
+                // Read first words as they will be used while extracting values later
+                long word1 = U.getLong(regionPtr1);
+                long word2 = U.getLong(regionPtr2);
+                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+                    word1 = Long.reverseBytes(word1);
+                    word2 = Long.reverseBytes(word2);
                 }
 
                 int keyHash1 = (Integer.rotateLeft(x1 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y1) * OpenMap.HASH_SEED;
