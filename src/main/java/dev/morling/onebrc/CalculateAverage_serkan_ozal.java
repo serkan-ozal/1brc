@@ -772,7 +772,7 @@ public class CalculateAverage_serkan_ozal {
             // Start searching from the calculated position
             // and continue until find an available slot in case of hash collision
             // TODO Prevent infinite loop if all the slots are in use for other keys
-            for (int entryOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx; entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK) {
+            for (int entryOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx;; entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK) {
                 int keySize = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
                 // Check whether current index is empty (no another key is inserted yet)
                 if (keySize == 0) {
