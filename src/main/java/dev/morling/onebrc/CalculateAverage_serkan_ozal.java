@@ -68,15 +68,15 @@ public class CalculateAverage_serkan_ozal {
 
     // Get configurations
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    private static final boolean VERBOSE = getBooleanConfig("VERBOSE", false);
-    private static final int THREAD_COUNT = getIntegerConfig("THREAD_COUNT", Runtime.getRuntime().availableProcessors());
-    private static final boolean USE_VTHREADS = getBooleanConfig("USE_VTHREADS", false);
-    private static final int VTHREAD_COUNT = getIntegerConfig("VTHREAD_COUNT", 1024);
-    private static final int REGION_COUNT = getIntegerConfig("REGION_COUNT", -1);
-    private static final boolean USE_SHARED_ARENA = getBooleanConfig("USE_SHARED_ARENA", true);
-    private static final boolean USE_SHARED_REGION = getBooleanConfig("USE_SHARED_REGION", true);
-    private static final int MAP_CAPACITY = getIntegerConfig("MAP_CAPACITY", 1 << 17);
-    private static final boolean CLOSE_STDOUT_ON_RESULT = getBooleanConfig("CLOSE_STDOUT_ON_RESULT", true);
+    private static final boolean VERBOSE = false; // getBooleanConfig("VERBOSE", false);
+    private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors(); // getIntegerConfig("THREAD_COUNT", Runtime.getRuntime().availableProcessors());
+    private static final boolean USE_VTHREADS = false; // getBooleanConfig("USE_VTHREADS", false);
+    private static final int VTHREAD_COUNT = 1024; // getIntegerConfig("VTHREAD_COUNT", 1024);
+    private static final int REGION_COUNT = 256; // getIntegerConfig("REGION_COUNT", -1);
+    private static final boolean USE_SHARED_ARENA = true; // getBooleanConfig("USE_SHARED_ARENA", true);
+    private static final boolean USE_SHARED_REGION = true; // getBooleanConfig("USE_SHARED_REGION", true);
+    private static final int MAP_CAPACITY = 1 << 17; // getIntegerConfig("MAP_CAPACITY", 1 << 17);
+    private static final boolean CLOSE_STDOUT_ON_RESULT = true; // getBooleanConfig("CLOSE_STDOUT_ON_RESULT", true);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // My dear old friend Unsafe
