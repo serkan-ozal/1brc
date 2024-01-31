@@ -481,7 +481,7 @@ public class CalculateAverage_serkan_ozal {
             }
 
             // Read and process region - tail
-            doProcessTail(regionPtr1, regionEnd1, regionPtr2, regionEnd2);
+//            doProcessTail(regionPtr1, regionEnd1, regionPtr2, regionEnd2);
         }
 
         private void doProcessTail(long regionPtr1, long regionEnd1, long regionPtr2, long regionEnd2) {
