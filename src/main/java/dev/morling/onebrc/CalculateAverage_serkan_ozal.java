@@ -367,16 +367,6 @@ public class CalculateAverage_serkan_ozal {
             return nextPtr;
         }
 
-        private int extractValue(long word, int decimalSepPos) {
-            long signed = (~word << 59) >> 63;
-            int shift = 28 - decimalSepPos;
-            long designMask = ~(signed & 0xFF);
-
-            long digits = ((word & designMask) << shift) & 0x0F000F0F00L;
-            long absValue = ((digits * 0x640a0001) >>> 32) & 0x3FF;
-            return (int) ((absValue ^ signed) - signed);
-        }
-
         private void doProcessRegion(long regionStart, long regionEnd) {
             final long size = regionEnd - regionStart;
             final long segmentSize = size / 2;
@@ -388,6 +378,7 @@ public class CalculateAverage_serkan_ozal {
             final long regionEnd2 = regionEnd;
 
             long regionPtr1, regionPtr2;
+            long[] nextRegionPtrs = new long[2];
 
             // Read and process region - main
             // Inspired by: @jerrinot
@@ -395,126 +386,63 @@ public class CalculateAverage_serkan_ozal {
             // - most of the implementation is inlined
             // - so get the benefit of ILP (Instruction Level Parallelism) better
             for (regionPtr1 = regionStart1, regionPtr2 = regionStart2; regionPtr1 < regionEnd1 && regionPtr2 < regionEnd2;) {
-                // Search key/value separators and find keys' start and end positions
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                long keyStartPtr1 = regionPtr1;
-                long keyStartPtr2 = regionPtr2;
-
-                ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr1, NATIVE_BYTE_ORDER);
-                ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr2, NATIVE_BYTE_ORDER);
-
-                int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-                int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
-
-                if (keyLength1 != BYTE_SPECIES_SIZE && keyLength2 != BYTE_SPECIES_SIZE) {
-                    regionPtr1 += (keyLength1 + 1);
-                    regionPtr2 += (keyLength2 + 1);
-                }
-                else {
-                    if (keyLength1 != BYTE_SPECIES_SIZE) {
-                        regionPtr1 += (keyLength1 + 1);
-                    }
-                    else {
-                        regionPtr1 += BYTE_SPECIES_SIZE;
-                        for (; U.getByte(regionPtr1) != KEY_VALUE_SEPARATOR; regionPtr1++)
-                            ;
-                        keyLength1 = (int) (regionPtr1 - keyStartPtr1);
-                        regionPtr1++;
-                    }
-                    if (keyLength2 != BYTE_SPECIES_SIZE) {
-                        regionPtr2 += (keyLength2 + 1);
-                    }
-                    else {
-                        regionPtr2 += BYTE_SPECIES_SIZE;
-                        for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
-                            ;
-                        keyLength2 = (int) (regionPtr2 - keyStartPtr2);
-                        regionPtr2++;
-                    }
-                }
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-                long word1 = U.getLong(regionPtr1);
-                long word2 = U.getLong(regionPtr2);
-                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                    word1 = Long.reverseBytes(word1);
-                    word2 = Long.reverseBytes(word2);
-                }
-                int decimalSepPos1 = Long.numberOfTrailingZeros(~word1 & 0x10101000);
-                int decimalSepPos2 = Long.numberOfTrailingZeros(~word2 & 0x10101000);
-
-//                // Calculate key hashes and find entry indexes
-//                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                int x1, y1, x2, y2;
-//                if (keyLength1 > 3 && keyLength2 > 3) {
-//                    x1 = U.getInt(keyStartPtr1);
-//                    y1 = U.getInt(regionPtr1 - 5);
-//                    x2 = U.getInt(keyStartPtr2);
-//                    y2 = U.getInt(regionPtr2 - 5);
-//                }
-//                else {
-//                    if (keyLength1 > 3) {
-//                        x1 = U.getInt(keyStartPtr1);
-//                        y1 = U.getInt(regionPtr1 - 5);
-//                    }
-//                    else {
-//                        x1 = U.getByte(keyStartPtr1);
-//                        y1 = U.getByte(regionPtr1 - 2);
-//                    }
-//                    if (keyLength2 > 3) {
-//                        x2 = U.getInt(keyStartPtr2);
-//                        y2 = U.getInt(regionPtr2 - 5);
-//                    }
-//                    else {
-//                        x2 = U.getByte(keyStartPtr2);
-//                        y2 = U.getByte(regionPtr2 - 2);
-//                    }
-//                }
-//
-//                int keyHash1 = (Integer.rotateLeft(x1 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y1) * OpenMap.HASH_SEED;
-//                int keyHash2 = (Integer.rotateLeft(x2 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y2) * OpenMap.HASH_SEED;
-//
-//                int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
-//                int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-                // Read first words as they will be used while extracting values later
-
-                processKeyAndValue(regionPtr1, keyVector1, keyStartPtr1, keyLength1, word1, decimalSepPos1,
-                                   regionPtr2, keyVector2, keyStartPtr2, keyLength2, word2, decimalSepPos2);
-//                int value1 = extractValue(word1, decimalSepPos1);
-//                int value2 = extractValue(word2, decimalSepPos2);
-//
-//                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
-//                map.putValue(entryOffset1, value1);
-//
-//                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
-//                map.putValue(entryOffset2, value2);
-
-                regionPtr1 = regionPtr1 + (decimalSepPos1 >>> 3) + 3;
-                regionPtr2 = regionPtr2 + (decimalSepPos2 >>> 3) + 3;
-
-                // Put extracted value into map
-
-//                // Put keys and calculate entry offsets to put values
-//                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
-//                int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
-//                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//                // Extract values by parsing and put them into map
-//                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                regionPtr1 = extractValue(regionPtr1, word1, map, entryOffset1);
-//                regionPtr2 = extractValue(regionPtr2, word2, map, entryOffset2);
-//                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                doProcessLines(regionPtr1, regionPtr2, nextRegionPtrs);
+                regionPtr1 = nextRegionPtrs[0];
+                regionPtr2 = nextRegionPtrs[1];
             }
 
             // Read and process region - tail
-//            doProcessTail(regionPtr1, regionEnd1, regionPtr2, regionEnd2);
+            doProcessTail(regionPtr1, regionEnd1, regionPtr2, regionEnd2);
         }
 
-        private void processKeyAndValue(long regionPtr1, ByteVector keyVector1, long keyStartPtr1, int keyLength1, long word1, int decimalSepPos1,
-                                        long regionPtr2, ByteVector keyVector2, long keyStartPtr2, int keyLength2, long word2, int decimalSepPos2) {
+        private void doProcessLines(long regionPtr1, long regionPtr2, long[] nextRegionPtrs) {
+            // Search key/value separators and find keys' start and end positions
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////
+            long keyStartPtr1 = regionPtr1;
+            long keyStartPtr2 = regionPtr2;
+
+            ByteVector keyVector1 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr1, NATIVE_BYTE_ORDER);
+            ByteVector keyVector2 = ByteVector.fromMemorySegment(BYTE_SPECIES, NULL, regionPtr2, NATIVE_BYTE_ORDER);
+
+            int keyLength1 = keyVector1.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
+            int keyLength2 = keyVector2.compare(VectorOperators.EQ, KEY_VALUE_SEPARATOR).firstTrue();
+
+            if (keyLength1 != BYTE_SPECIES_SIZE && keyLength2 != BYTE_SPECIES_SIZE) {
+                regionPtr1 += (keyLength1 + 1);
+                regionPtr2 += (keyLength2 + 1);
+            }
+            else {
+                if (keyLength1 != BYTE_SPECIES_SIZE) {
+                    regionPtr1 += (keyLength1 + 1);
+                }
+                else {
+                    regionPtr1 += BYTE_SPECIES_SIZE;
+                    for (; U.getByte(regionPtr1) != KEY_VALUE_SEPARATOR; regionPtr1++)
+                        ;
+                    keyLength1 = (int) (regionPtr1 - keyStartPtr1);
+                    regionPtr1++;
+                }
+                if (keyLength2 != BYTE_SPECIES_SIZE) {
+                    regionPtr2 += (keyLength2 + 1);
+                }
+                else {
+                    regionPtr2 += BYTE_SPECIES_SIZE;
+                    for (; U.getByte(regionPtr2) != KEY_VALUE_SEPARATOR; regionPtr2++)
+                        ;
+                    keyLength2 = (int) (regionPtr2 - keyStartPtr2);
+                    regionPtr2++;
+                }
+            }
+
+            // Read first words as they will be used while extracting values later
+            long word1 = U.getLong(regionPtr1);
+            long word2 = U.getLong(regionPtr2);
+            if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+                word1 = Long.reverseBytes(word1);
+                word2 = Long.reverseBytes(word2);
+            }
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
             // Calculate key hashes and find entry indexes
             ////////////////////////////////////////////////////////////////////////////////////////////////////////
             int x1, y1, x2, y2;
@@ -544,16 +472,23 @@ public class CalculateAverage_serkan_ozal {
             }
 
             int keyHash1 = (Integer.rotateLeft(x1 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y1) * OpenMap.HASH_SEED;
-            int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
-            int value1 = extractValue(word1, decimalSepPos1);
-            int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
-            map.putValue(entryOffset1, value1);
-
             int keyHash2 = (Integer.rotateLeft(x2 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y2) * OpenMap.HASH_SEED;
+
+            int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
             int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
-            int value2 = extractValue(word2, decimalSepPos2);
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            // Put keys and calculate entry offsets to put values
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////
+            int entryOffset1 = map.putKey(keyVector1, keyStartPtr1, keyLength1, entryIdx1);
             int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
-            map.putValue(entryOffset2, value2);
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            // Extract values by parsing and put them into map
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////
+            nextRegionPtrs[0] = extractValue(regionPtr1, word1, map, entryOffset1);
+            nextRegionPtrs[1] = extractValue(regionPtr2, word2, map, entryOffset2);
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////
         }
 
         private void doProcessTail(long regionPtr1, long regionEnd1, long regionPtr2, long regionEnd2) {
