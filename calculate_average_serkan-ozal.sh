@@ -25,6 +25,13 @@ JAVA_OPTS="$JAVA_OPTS -Djdk.incubator.vector.VECTOR_ACCESS_OOB_CHECK=0"
 if [[ ! "$(uname -s)" = "Darwin" ]]; then
   JAVA_OPTS="$JAVA_OPTS -XX:+UseTransparentHugePages"
 fi
+JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=quiet"
+JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline\,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::calculateEntryIndex"
+JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline\,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::putKey"
+JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline\,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::keysEqual"
+JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline\,dev.morling.onebrc.CalculateAverage_serkan_ozal\$OpenMap::putValue"
+JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline\,dev.morling.onebrc.CalculateAverage_serkan_ozal\$RegionProcessor::doProcessTail"
+JAVA_OPTS="$JAVA_OPTS -XX:CompileCommand=inline\,dev.morling.onebrc.CalculateAverage_serkan_ozal\$RegionProcessor::extractValue"
 
 #echo "Process started at $(date +%s%N | cut -b1-13)"
 eval "exec 3< <({ java $JAVA_OPTS --class-path target/average-1.0.0-SNAPSHOT.jar dev.morling.onebrc.CalculateAverage_serkan_ozal; })"
