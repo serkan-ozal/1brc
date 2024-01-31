@@ -130,11 +130,12 @@ public class CalculateAverage_serkan_ozal {
                 region = fc.map(FileChannel.MapMode.READ_ONLY, 0, fileSize, arena);
             }
 
+            List<Task> tasks = new ArrayList<>(regionCount);
             Queue<Task> sharedTasks = new ConcurrentLinkedQueue<>();
             Request request = new Request(arena, sharedTasks, result);
-
             List<Future<Response>> futures = new ArrayList<>(regionCount);
-            // Start region processors to process tasks for each region
+
+            // Start region processors earlier to process tasks for each region
             for (int i = 0; i < concurrency; i++) {
                 RegionProcessor regionProcessor = createRegionProcessor(request);
                 Future<Response> future = executor.submit(regionProcessor);
@@ -142,7 +143,6 @@ public class CalculateAverage_serkan_ozal {
             }
 
             // Split whole file into regions and create tasks for each region
-            List<Task> tasks = new ArrayList<>(regionCount);
             for (int i = 0; i < regionCount; i++) {
                 long endPos = Math.min(fileSize, startPos + regionSize);
                 // Lines might split into different regions.
@@ -155,6 +155,7 @@ public class CalculateAverage_serkan_ozal {
                 startPos = closestLineEndPos;
             }
 
+            // Submit all tasks
             sharedTasks.addAll(tasks);
             request.start();
 
