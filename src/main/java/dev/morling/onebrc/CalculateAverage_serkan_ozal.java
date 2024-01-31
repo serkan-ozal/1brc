@@ -745,7 +745,6 @@ public class CalculateAverage_serkan_ozal {
             // TODO Prevent infinite loop if all the slots are in use for other keys
             for (int entryOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + entryIdx;; entryOffset = (entryOffset + ENTRY_SIZE) & ENTRY_MASK) {
                 int keySize = U.getInt(data, entryOffset + KEY_SIZE_OFFSET);
-                int keyStartArrayOffset =
                 // Check whether current index is empty (no another key is inserted yet)
                 if (keySize == 0) {
                     // Initialize entry slot for new key
