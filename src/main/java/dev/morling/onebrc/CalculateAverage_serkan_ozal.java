@@ -346,9 +346,12 @@ public class CalculateAverage_serkan_ozal {
         // Credits: merykitty
         private long extractValue(long regionPtr, long word, OpenMap map, int entryOffset) {
             // Parse and extract value
+
+            // 1. level instruction set (no dependency between each other so can be run in parallel)
             long signed = (~word << 59) >> 63;
             int decimalSepPos = Long.numberOfTrailingZeros(~word & 0x10101000);
 
+            // 2. level instruction set (no dependency between each other so can be run in parallel)
             long designMask = ~(signed & 0xFF);
             int shift = 28 - decimalSepPos;
             long nextPtr = regionPtr + (decimalSepPos >>> 3) + 3;
@@ -805,16 +808,17 @@ public class CalculateAverage_serkan_ozal {
 
         private void putValue(int entryOffset, int value) {
             int countOffset = entryOffset + COUNT_OFFSET;
-            U.putInt(data, countOffset, U.getInt(data, countOffset) + 1);
             int minValueOffset = entryOffset + MIN_VALUE_OFFSET;
+            int maxValueOffset = entryOffset + MAX_VALUE_OFFSET;
+            int sumOffset = entryOffset + VALUE_SUM_OFFSET;
+
+            U.putInt(data, countOffset, U.getInt(data, countOffset) + 1);
             if (value < U.getShort(data, minValueOffset)) {
                 U.putShort(data, minValueOffset, (short) value);
             }
-            int maxValueOffset = entryOffset + MAX_VALUE_OFFSET;
             if (value > U.getShort(data, maxValueOffset)) {
                 U.putShort(data, maxValueOffset, (short) value);
             }
-            int sumOffset = entryOffset + VALUE_SUM_OFFSET;
             U.putLong(data, sumOffset, U.getLong(data, sumOffset) + value);
         }
 
