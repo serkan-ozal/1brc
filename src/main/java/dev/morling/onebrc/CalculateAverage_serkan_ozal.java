@@ -433,9 +433,9 @@ public class CalculateAverage_serkan_ozal {
                 int x1, y1, x2, y2;
                 if (keyLength1 >= Integer.BYTES && keyLength2 >= Integer.BYTES) {
                     x1 = U.getInt(keyStartPtr1);
-                    y1 = U.getInt(keyStartPtr1 + keyLength1 - Integer.BYTES);
+                    y1 = U.getInt(regionPtr1 - 5);
                     x2 = U.getInt(keyStartPtr2);
-                    y2 = U.getInt(keyStartPtr2 + keyLength2 - Integer.BYTES);
+                    y2 = U.getInt(regionPtr2 - 5);
                 }
                 else {
                     if (keyLength1 >= Integer.BYTES) {
