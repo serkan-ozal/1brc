@@ -52,7 +52,7 @@ public class CalculateAverage_serkan_ozal {
 
     private static final String FILE = System.getProperty("file.path", "./measurements.txt");
 
-    private static final VectorSpecies<Byte> BYTE_SPECIES = ByteVector.SPECIES_PREFERRED;
+    private static final VectorSpecies<Byte> BYTE_SPECIES = ByteVector.SPECIES_512;
 //            ByteVector.SPECIES_PREFERRED.length() >= 16
 //            // Since majority (99%) of the city names <= 16 bytes, according to my experiments,
 //            // 128 bit (16 byte) vectors perform better than 256 bit (32 byte) or 512 bit (64 byte) vectors
