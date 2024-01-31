@@ -755,9 +755,6 @@ public class CalculateAverage_serkan_ozal {
                     entryOffsets[entryOffsetIdx++] = entryOffset;
                     return entryOffset;
                 }
-                if (keySize != keyLength) {
-                    continue;
-                }
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
