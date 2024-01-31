@@ -75,7 +75,7 @@ public class CalculateAverage_serkan_ozal {
     private static final int REGION_COUNT = 512; // getIntegerConfig("REGION_COUNT", -1);
     private static final boolean USE_SHARED_ARENA = true; // getBooleanConfig("USE_SHARED_ARENA", true);
     private static final boolean USE_SHARED_REGION = true; // getBooleanConfig("USE_SHARED_REGION", true);
-    private static final int MAP_CAPACITY = 1 << 17; // getIntegerConfig("MAP_CAPACITY", 1 << 17);
+    private static final int MAP_CAPACITY = 1 << 12; // getIntegerConfig("MAP_CAPACITY", 1 << 17);
     private static final boolean CLOSE_STDOUT_ON_RESULT = true; // getBooleanConfig("CLOSE_STDOUT_ON_RESULT", true);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -434,31 +434,31 @@ public class CalculateAverage_serkan_ozal {
 
                 // Calculate key hashes and find entry indexes
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                int x1, y1, x2, y2;
-//                if (keyLength1 > 3 && keyLength2 > 3) {
-                  int  x1 = U.getInt(keyStartPtr1);
-                  int  y1 = U.getInt(regionPtr1 - 5);
-                  int x2 = U.getInt(keyStartPtr2);
-                  int y2 = U.getInt(regionPtr2 - 5);
-//                }
-//                else {
-//                    if (keyLength1 > 3) {
-//                        x1 = U.getInt(keyStartPtr1);
-//                        y1 = U.getInt(regionPtr1 - 5);
-//                    }
-//                    else {
-//                        x1 = U.getByte(keyStartPtr1);
-//                        y1 = U.getByte(regionPtr1 - 2);
-//                    }
-//                    if (keyLength2 > 3) {
-//                        x2 = U.getInt(keyStartPtr2);
-//                        y2 = U.getInt(regionPtr2 - 5);
-//                    }
-//                    else {
-//                        x2 = U.getByte(keyStartPtr2);
-//                        y2 = U.getByte(regionPtr2 - 2);
-//                    }
-//                }
+                int x1, y1, x2, y2;
+                if (keyLength1 > 3 && keyLength2 > 3) {
+                    x1 = U.getInt(keyStartPtr1);
+                    y1 = U.getInt(regionPtr1 - 5);
+                    x2 = U.getInt(keyStartPtr2);
+                    y2 = U.getInt(regionPtr2 - 5);
+                }
+                else {
+                    if (keyLength1 > 3) {
+                        x1 = U.getInt(keyStartPtr1);
+                        y1 = U.getInt(regionPtr1 - 5);
+                    }
+                    else {
+                        x1 = U.getByte(keyStartPtr1);
+                        y1 = U.getByte(regionPtr1 - 2);
+                    }
+                    if (keyLength2 > 3) {
+                        x2 = U.getInt(keyStartPtr2);
+                        y2 = U.getInt(regionPtr2 - 5);
+                    }
+                    else {
+                        x2 = U.getByte(keyStartPtr2);
+                        y2 = U.getByte(regionPtr2 - 2);
+                    }
+                }
 
                 int keyHash1 = (Integer.rotateLeft(x1 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y1) * OpenMap.HASH_SEED;
                 int keyHash2 = (Integer.rotateLeft(x2 * OpenMap.HASH_SEED, OpenMap.HASH_ROTATE) ^ y2) * OpenMap.HASH_SEED;
