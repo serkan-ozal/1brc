@@ -460,8 +460,8 @@ public class CalculateAverage_serkan_ozal {
                     }
                 }
 
-                int keyHash1 = (Integer.rotateLeft(x1, 5) ^ y1) * 0x9E3779B9;
-                int keyHash2 = (Integer.rotateLeft(x2, 5) ^ y2) * 0x9E3779B9;
+                int keyHash1 = (Integer.rotateLeft(x1 * 0x9E3779B9, 5) ^ y1) * 0x9E3779B9;
+                int keyHash2 = (Integer.rotateLeft(x2 * 0x9E3779B9, 5) ^ y2) * 0x9E3779B9;
 
                 int entryIdx1 = (keyHash1 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
                 int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
