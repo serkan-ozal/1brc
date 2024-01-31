@@ -432,14 +432,6 @@ public class CalculateAverage_serkan_ozal {
                         regionPtr2++;
                     }
                 }
-
-                // Read first words as they will be used while extracting values later
-                long word1 = U.getLong(regionPtr1);
-                long word2 = U.getLong(regionPtr2);
-                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
-                    word1 = Long.reverseBytes(word1);
-                    word2 = Long.reverseBytes(word2);
-                }
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 // Calculate key hashes and find entry indexes
@@ -477,10 +469,17 @@ public class CalculateAverage_serkan_ozal {
                 int entryIdx2 = (keyHash2 & OpenMap.ENTRY_HASH_MASK) << OpenMap.ENTRY_SIZE_SHIFT;
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+                // Read first words as they will be used while extracting values later
+                long word1 = U.getLong(regionPtr1);
+                long word2 = U.getLong(regionPtr2);
+                if (NATIVE_BYTE_ORDER == ByteOrder.BIG_ENDIAN) {
+                    word1 = Long.reverseBytes(word1);
+                    word2 = Long.reverseBytes(word2);
+                }
                 int decimalSepPos1 = Long.numberOfTrailingZeros(~word1 & 0x10101000);
                 int decimalSepPos2 = Long.numberOfTrailingZeros(~word2 & 0x10101000);
-                long nextPtr1 = regionPtr1 + (decimalSepPos1 >>> 3) + 3;
-                long nextPtr2 = regionPtr2 + (decimalSepPos2 >>> 3) + 3;
+                regionPtr1 = regionPtr1 + (decimalSepPos1 >>> 3) + 3;
+                regionPtr2 = regionPtr2 + (decimalSepPos2 >>> 3) + 3;
                 int value1 = extractValue(word1, decimalSepPos1);
                 int value2 = extractValue(word2, decimalSepPos2);
 
@@ -489,9 +488,6 @@ public class CalculateAverage_serkan_ozal {
 
                 int entryOffset2 = map.putKey(keyVector2, keyStartPtr2, keyLength2, entryIdx2);
                 map.putValue(entryOffset2, value2);
-
-                regionPtr1 = nextPtr1;
-                regionPtr2 = nextPtr2;
 
                 // Put extracted value into map
 
