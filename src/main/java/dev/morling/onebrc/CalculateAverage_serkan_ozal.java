@@ -465,11 +465,14 @@ public class CalculateAverage_serkan_ozal {
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 if (keyLength1 > 3 && keyLength2 > 3) {
+                    x1 = U.getInt(keyStartPtr1);
                     y1 = U.getInt(regionPtr1 - 5);
+                    x2 = U.getInt(keyStartPtr2);
                     y2 = U.getInt(regionPtr2 - 5);
                 }
                 else {
                     if (keyLength1 > 3) {
+                        x1 = U.getInt(keyStartPtr1);
                         y1 = U.getInt(regionPtr1 - 5);
                     }
                     else {
@@ -477,6 +480,7 @@ public class CalculateAverage_serkan_ozal {
                         y1 = U.getByte(regionPtr1 - 2);
                     }
                     if (keyLength2 > 3) {
+                        x2 = U.getInt(keyStartPtr2);
                         y2 = U.getInt(regionPtr2 - 5);
                     }
                     else {
@@ -847,12 +851,8 @@ public class CalculateAverage_serkan_ozal {
             int sumOffset = entryOffset + VALUE_SUM_OFFSET;
 
             U.putInt(data, countOffset, U.getInt(data, countOffset) + 1);
-            if (value < U.getShort(data, minValueOffset)) {
-                U.putShort(data, minValueOffset, (short) value);
-            }
-            if (value > U.getShort(data, maxValueOffset)) {
-                U.putShort(data, maxValueOffset, (short) value);
-            }
+            U.putShort(data, minValueOffset, (short) Math.min(value, U.getShort(data, minValueOffset)));
+            U.putShort(data, maxValueOffset, (short) Math.max(value, U.getShort(data, maxValueOffset)));
             U.putLong(data, sumOffset, U.getLong(data, sumOffset) + value);
         }
 
