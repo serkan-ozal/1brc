@@ -755,28 +755,24 @@ public class CalculateAverage_serkan_ozal {
                     entryOffsets[entryOffsetIdx++] = entryOffset;
                     return entryOffset;
                 }
+                if (keySize != keyLength) {
+                    continue;
+                }
                 // Check for hash collision (hashes are same, but keys are different).
                 // If there is no collision (both hashes and keys are equals), return current slot's offset.
                 // Otherwise, continue iterating until find an available slot.
-                if (keySize == keyLength && keysEqual(keyVector, keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
+                ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, entryOffset + KEY_ARRAY_OFFSET));
+                int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
+                if (eqCount == keyLength) {
+                    return entryOffset;
+                } else if (keyLength > BYTE_SPECIES_SIZE
+                        && keysEqual(keyStartAddress, keyLength, entryOffset + KEY_ARRAY_OFFSET)) {
                     return entryOffset;
                 }
             }
         }
 
-        private boolean keysEqual(ByteVector keyVector, long keyStartAddress, int keyLength, int keyStartArrayOffset) {
-            // Use vectorized search for the comparison of keys.
-            // Since majority of the city names >= 8 bytes and <= 16 bytes,
-            // this way is more efficient (according to my experiments) than any other comparisons (byte by byte or 2 longs).
-            ByteVector entryKeyVector = ByteVector.fromArray(BYTE_SPECIES, data, keyStartArrayOffset);
-            int eqCount = keyVector.compare(VectorOperators.EQ, entryKeyVector).trueCount();
-            if (eqCount == keyLength) {
-                return true;
-            }
-            else if (keyLength <= BYTE_SPECIES_SIZE) {
-                return false;
-            }
-
+        private boolean keysEqual(long keyStartAddress, int keyLength, int keyStartArrayOffset) {
             // Compare remaining parts of the keys
 
             int normalizedKeyLength = keyLength;
