@@ -639,7 +639,6 @@ public class CalculateAverage_serkan_ozal {
             }
             try {
                 map.merge(this.resultMap);
-                buildString();
                 return true;
             }
             finally {
@@ -652,7 +651,6 @@ public class CalculateAverage_serkan_ozal {
             lock.lock();
             try {
                 map.merge(this.resultMap);
-                buildString();
             }
             finally {
                 lock.unlock();
@@ -677,21 +675,20 @@ public class CalculateAverage_serkan_ozal {
         }
 
         private void print() {
-//            StringBuilder sb = new StringBuilder(1 << 14);
-//            boolean firstEntryAppended = false;
-//            sb.append("{");
-//            for (Map.Entry<String, KeyResult> e : resultMap.entrySet()) {
-//                if (firstEntryAppended) {
-//                    sb.append(", ");
-//                }
-//                String key = e.getKey();
-//                KeyResult value = e.getValue();
-//                sb.append(key).append("=").append(value);
-//                firstEntryAppended = true;
-//            }
-//            sb.append('}');
-//            System.out.println(sb);
-            System.out.println(resultStr);
+            StringBuilder sb = new StringBuilder(1 << 14);
+            boolean firstEntryAppended = false;
+            sb.append("{");
+            for (Map.Entry<String, KeyResult> e : resultMap.entrySet()) {
+                if (firstEntryAppended) {
+                    sb.append(", ");
+                }
+                String key = e.getKey();
+                KeyResult value = e.getValue();
+                sb.append(key).append("=").append(value);
+                firstEntryAppended = true;
+            }
+            sb.append('}');
+            System.out.println(sb);
         }
 
     }
@@ -739,7 +736,7 @@ public class CalculateAverage_serkan_ozal {
         private OpenMap() {
             this.data = new byte[MAP_SIZE];
             // Max number of unique keys are 10K, so 1 << 14 (16384) is long enough to hold offsets for all of them
-            this.entryOffsets = new int[1 << 14];
+            this.entryOffsets = new int[1 << 10];
             this.entryOffsetIdx = 0;
         }
 
